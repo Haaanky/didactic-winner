@@ -1,0 +1,114 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/day_night_layer.gd" id="1_daynight"]
+[ext_resource type="PackedScene" path="res://scenes/characters/player.tscn" id="2_player"]
+[ext_resource type="Script" path="res://scripts/ui/hud.gd" id="3_hud"]
+
+[sub_resource type="WorldBoundaryShape2D" id="1_ground"]
+
+[node name="Main" type="Node2D"]
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="TileMapGround" type="TileMapLayer" parent="World"]
+
+[node name="TileMapDeco" type="TileMapLayer" parent="World"]
+
+[node name="TileMapSnow" type="TileMapLayer" parent="World"]
+
+[node name="Trees" type="Node2D" parent="World"]
+
+[node name="Objects" type="Node2D" parent="World"]
+
+[node name="DayNightLayer" type="CanvasModulate" parent="."]
+color = Color(1, 1, 1, 1)
+script = ExtResource("1_daynight")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector2(640, 360)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("3_hud")
+
+[node name="NeedsPanel" type="PanelContainer" parent="HUD"]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = 80.0
+offset_left = 8.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="HUD/NeedsPanel"]
+layout_mode = 2
+
+[node name="HungerBar" type="ProgressBar" parent="HUD/NeedsPanel/VBox"]
+custom_minimum_size = Vector2(200, 18)
+max_value = 100.0
+value = 100.0
+
+[node name="WarmthBar" type="ProgressBar" parent="HUD/NeedsPanel/VBox"]
+custom_minimum_size = Vector2(200, 18)
+max_value = 100.0
+value = 100.0
+
+[node name="RestBar" type="ProgressBar" parent="HUD/NeedsPanel/VBox"]
+custom_minimum_size = Vector2(200, 18)
+max_value = 100.0
+value = 100.0
+
+[node name="MoraleBar" type="ProgressBar" parent="HUD/NeedsPanel/VBox"]
+custom_minimum_size = Vector2(200, 18)
+max_value = 100.0
+value = 100.0
+
+[node name="HealthBar" type="ProgressBar" parent="HUD/NeedsPanel/VBox"]
+custom_minimum_size = Vector2(200, 18)
+max_value = 100.0
+value = 100.0
+
+[node name="CriticalIcons" type="HBoxContainer" parent="HUD"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = 40.0
+offset_left = -200.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="HungerCritical" type="TextureRect" parent="HUD/CriticalIcons"]
+visible = false
+custom_minimum_size = Vector2(32, 32)
+
+[node name="WarmthCritical" type="TextureRect" parent="HUD/CriticalIcons"]
+visible = false
+custom_minimum_size = Vector2(32, 32)
+
+[node name="RestCritical" type="TextureRect" parent="HUD/CriticalIcons"]
+visible = false
+custom_minimum_size = Vector2(32, 32)
+
+[node name="MoraleCritical" type="TextureRect" parent="HUD/CriticalIcons"]
+visible = false
+custom_minimum_size = Vector2(32, 32)
+
+[node name="SeasonDayLabel" type="Label" parent="HUD"]
+anchors_preset = 4
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -30.0
+offset_right = -8.0
+offset_left = -150.0
+offset_bottom = -8.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Spring — Day 1"

@@ -1,0 +1,48 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/player/needs_component.gd" id="2_needs"]
+[ext_resource type="Script" path="res://scripts/player/inventory_component.gd" id="3_inv"]
+[ext_resource type="Script" path="res://scripts/player/skill_component.gd" id="4_skill"]
+
+[sub_resource type="CapsuleShape2D" id="1_shape"]
+radius = 8.0
+height = 16.0
+
+[sub_resource type="CircleShape2D" id="2_rayshape"]
+radius = 2.0
+
+[sub_resource type="SphereShape2D" id="3_heatshape"]
+radius = 80.0
+
+[node name="PlayerController" type="CharacterBody2D"]
+script = ExtResource("1_player")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("1_shape")
+position = Vector2(0, 4)
+
+[node name="NeedsComponent" type="Node" parent="."]
+script = ExtResource("2_needs")
+
+[node name="InventoryComponent" type="Node" parent="."]
+script = ExtResource("3_inv")
+
+[node name="SkillComponent" type="Node" parent="."]
+script = ExtResource("4_skill")
+
+[node name="InteractRay" type="RayCast2D" parent="."]
+enabled = true
+target_position = Vector2(0, 32)
+
+[node name="HeatDetector" type="Area2D" parent="."]
+
+[node name="HeatDetectorShape" type="CollisionShape2D" parent="HeatDetector"]
+shape = SubResource("3_heatshape")
+
+[node name="FootstepPlayer" type="AudioStreamPlayer2D" parent="."]
+bus = &"SFX"
+
+[connection signal="interacted_with" from="." to="." method="_try_interact"]
