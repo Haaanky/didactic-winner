@@ -50,6 +50,25 @@ didactic-winner/
 
 ## Game Engine: Godot 4
 
+### Version Policy
+
+**Always use the latest stable Godot 4.x release.**
+
+- Target the latest stable `4.x` version at all times (e.g. 4.4, not 4.3 or Godot 3.x)
+- AI assistants must generate code and APIs compatible with **Godot 4 latest stable** — never Godot 3 syntax
+- When in doubt, cross-reference the [Godot 4 stable docs](https://docs.godotengine.org/en/stable/)
+- Common Godot 3 → 4 traps to avoid:
+
+| Godot 3 (wrong) | Godot 4 (correct) |
+|-----------------|-------------------|
+| `KinematicBody2D` | `CharacterBody2D` |
+| `move_and_slide(velocity)` | `move_and_slide()` (velocity is a property) |
+| `yield()` | `await` |
+| `onready var` | `@onready var` |
+| `export var` | `@export var` |
+| `connect("signal", self, "_method")` | `signal.connect(_method)` |
+| `OS.get_ticks_msec()` | `Time.get_ticks_msec()` |
+
 ### Installation
 
 Download from https://godotengine.org/download — choose **Godot 4 (Standard)**, no Mono/.NET needed unless C# is used.
@@ -204,11 +223,12 @@ Add Alaska forest tileset
 
 1. **Read before editing** — always read existing scripts/scenes before modifying
 2. **Use GDScript** — do not introduce C# unless explicitly requested
-3. **Follow naming conventions** listed above
-4. **Signals over coupling** — prefer signals to direct `get_node()` calls across scene boundaries
-5. **Keep scenes self-contained** — each scene should function independently where possible
-6. **No magic numbers** — use named constants or `@export` variables
-7. **Test in-engine** — Godot logic must be verified by running the editor; unit tests are done via `GUT` plugin if added
+3. **Use Godot 4 latest stable APIs only** — never generate Godot 3 syntax; see the Version Policy table above
+4. **Follow naming conventions** listed above
+5. **Signals over coupling** — prefer signals to direct `get_node()` calls across scene boundaries
+6. **Keep scenes self-contained** — each scene should function independently where possible
+7. **No magic numbers** — use named constants or `@export` variables
+8. **Test in-engine** — Godot logic must be verified by running the editor; unit tests are done via `GUT` plugin if added
 
 ---
 
