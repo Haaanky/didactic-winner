@@ -391,17 +391,92 @@ Add Alaska forest tileset
 5. **Signals over coupling** — prefer signals to direct `get_node()` calls across scene boundaries
 6. **Keep scenes self-contained** — each scene should function independently where possible
 7. **No magic numbers** — use named constants or `@export` variables
-8. **Test in-engine** — Godot logic must be verified by running the editor; unit tests are done via `GUT` plugin if added
+8. **Test in-engine** — Godot logic must be verified by running the editor; unit tests are written with **GUT 9.6.0** (see Testing section below)
 
 ---
 
-## Future Setup Checklist
+## Testing
 
-- [ ] Initialize Godot 4 project (`project.godot`)
-- [ ] Configure `.gitignore` for Godot
-- [ ] Set up Input Map actions
-- [ ] Create main scene (`scenes/main.tscn`)
-- [ ] Add `SceneManager` autoload
-- [ ] Add `GameManager` autoload
-- [ ] Create player scene and basic movement
-- [ ] Add first level layout
+### Framework: GUT 9.6.0
+
+**GUT (Godot Unit Testing) 9.6.0** is the current release for Godot 4.6, published 2026-02-24.
+
+- Source: https://github.com/bitwes/Gut
+- Docs: https://gut.readthedocs.io/
+- Godot Asset Library: search "GUT - Godot Unit Testing (Godot 4)"
+
+### Installation
+
+Download or clone the GUT repo and place the `addons/gut/` directory into the project root. Then enable the plugin in **Project → Project Settings → Plugins**.
+
+### Running Tests
+
+- **Editor panel:** Open the GUT dock → click **Run All**
+- **Command line:** `godot --path /path/to/project -s addons/gut/gut_cmdln.gd`
+
+### Conventions
+
+- Test files live in `tests/unit/`
+- File names: `test_<system>.gd`
+- All test scripts `extend GutTest`
+- Lifecycle hooks: `before_each()` / `after_each()`
+- Test method prefix: `test_`
+- Configuration: `.gutconfig` at project root
+
+### Example
+
+```gdscript
+extends GutTest
+
+var _subject: MyNode
+
+func before_each() -> void:
+    _subject = MyNode.new()
+    add_child(_subject)
+
+func after_each() -> void:
+    _subject.queue_free()
+
+func test_initial_value_is_zero() -> void:
+    assert_eq(_subject.value, 0)
+```
+
+---
+
+## Setup Checklist
+
+- [x] Initialize Godot 4 project (`project.godot`)
+- [x] Configure `.gitignore` for Godot
+- [x] Set up Input Map actions (`move_left/right/up/down`, `jump`, `interact`, `pause`)
+- [x] Create main scene with main menu (`scenes/main.tscn`)
+- [x] Add `SceneManager` autoload
+- [x] Add `GameManager` autoload
+- [x] Add `EventBus` autoload (global signal relay)
+- [x] Add `AudioManager` autoload (Music + SFX buses)
+- [x] Create player scene with 8-directional movement (`scenes/characters/player.tscn`)
+- [x] Add first level layout (`scenes/levels/level_01.tscn`)
+- [x] Add HUD with health bar (`scenes/ui/hud.tscn`)
+- [x] Set up GUT 9.6.0 test scaffold (`.gutconfig`, `tests/unit/`)
+- [x] Write unit tests for `EventBus`, `GameManager`, `PlayerController`
+- [ ] Install GUT 9.6.0 addon (`addons/gut/`)
+- [ ] Add `NeedsComponent` (hunger, warmth, rest, morale) — see FR-PC-02
+- [ ] Add `TimeManager` autoload (day/night + seasons) — see FR-WE-04, FR-WE-05
+- [ ] Add `WeatherManager` autoload — see FR-WE-06
+- [ ] Add `InventoryComponent` — see FR-PC-06
+- [ ] Add `SkillComponent` — see SRS §4.3
+- [ ] Add `AppearanceComponent` — see FR-PC-07
+- [ ] Implement building/construction system — see SRS §4.4
+- [ ] Implement fishing system — see SRS §4.6
+- [ ] Implement hunting + trapping — see SRS §4.7
+- [ ] Implement crafting system — see SRS §4.8
+- [ ] Implement town + NPCs — see SRS §4.9
+- [ ] Implement pets system — see SRS §4.10
+- [ ] Implement death + generational continuity — see SRS §4.11
+- [ ] Implement save system — see SRS §4.16
+- [ ] Implement diegetic HUD + journal — see FR-UI-01, FR-UI-06
+- [ ] Implement pause menu + settings screen — see FR-UI-07
+- [ ] Open-world map + TileMap terrain — see FR-WE-01
+- [ ] Dynamic path system — see FR-WE-02, FR-WE-03
+- [ ] Environmental storytelling set-dressing — see FR-WE-07
+- [ ] Vehicles (bicycle, car, canoe) — see SRS §4.5
+- [ ] Difficulty modes — see SRS §4.15

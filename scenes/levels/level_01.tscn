@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3 uid="uid://level01scene"]
+
+[ext_resource type="PackedScene" uid="uid://playerscene1" path="res://scenes/characters/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" uid="uid://hudscene001" path="res://scenes/ui/hud.tscn" id="2_hud"]
+
+[node name="Level01" type="Node2D"]
+
+[node name="TerrainLayer" type="TileMapLayer" parent="."]
+collision_enabled = true
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(128, 128)
+
+[node name="HUD" parent="." instance=ExtResource("2_hud")]
