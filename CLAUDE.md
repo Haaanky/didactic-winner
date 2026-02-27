@@ -4,6 +4,40 @@ This file provides guidance for AI assistants (Claude and others) working in thi
 
 ---
 
+## MANDATORY RULES — Read First, Always
+
+> These rules apply to **every task, every file, every session** in this project. No exceptions.
+
+### Engine & Language
+- **Godot 4 latest stable only** — never Godot 3 syntax or APIs
+- **GDScript only** — never C# unless explicitly requested by the user
+- Before writing any API call, verify it exists in Godot 4 (not Godot 3)
+
+### Code Quality
+- **Read before editing** — always read the full file before making any change
+- **No magic numbers** — every numeric value must be a named constant or `@export`
+- **No hardcoded input keys** — always use Input Map action names
+- **Signals over coupling** — never use `get_node()` across scene boundaries; use signals or `@export`
+- **Follow naming conventions** — see the GDScript Conventions section below
+
+### File & Scene Structure
+- **Place files in the correct folder** — scripts in `scripts/`, scenes in `scenes/`, assets in `assets/`
+- **One scene per entity** — player, enemy, item each get their own `.tscn`
+- **Keep scenes self-contained** — a scene must function independently where possible
+- **Autoloads sparingly** — only `GameManager`, `AudioManager`, `SceneManager` are singletons
+
+### Git
+- **Always work on a `claude/<description>-<id>` branch** — never commit directly to `main`
+- **Commit messages are imperative** — e.g. `Add player jump mechanic`, not `Added` or `Adding`
+- **Do not commit generated files** — `.godot/`, `*.import`, `export_presets.cfg`, `build/`
+
+### AI Behaviour
+- **Check this file at the start of every session** — rules may have been updated
+- **Ask before deviating** — if a rule conflicts with a request, flag it to the user
+- **No speculative changes** — only modify what was explicitly requested
+
+---
+
 ## Project Overview
 
 **Dudes in Alaska** is a 2D game built with [Godot 4](https://godotengine.org/) — a free, open-source game engine. The project lives in this repository and targets desktop platforms (Linux, macOS, Windows).
