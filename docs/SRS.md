@@ -13,6 +13,8 @@
 2. [Overall Description](#2-overall-description)
 3. [Requirements Extraction from Pitch](#3-requirements-extraction-from-pitch)
 4. [Functional Requirements](#4-functional-requirements)
+   - 4.17 [Touchscreen Input](#417-touchscreen-input)
+   - 4.18 [Controller Input](#418-controller-input)
 5. [Non-Functional Requirements](#5-non-functional-requirements)
 6. [Constraints & Assumptions](#6-constraints--assumptions)
 7. [Glossary](#7-glossary)
@@ -70,7 +72,7 @@ The game is a walking sim / survival sim hybrid. The player walks out into the w
 ### 2.4 Operating Environment
 - Platform: PC desktop (Linux, macOS, Windows); mobile (Android, iOS) as an optional target
 - Engine: Godot 4, GDScript
-- Input: Keyboard + Mouse (primary); gamepad; touchscreen (optional, auto-detected)
+- Input: Keyboard + Mouse (primary); gamepad (DS5, DS4, Xbox, Steam Controller, generic HID); touchscreen (optional, auto-detected)
 
 ---
 
@@ -555,6 +557,40 @@ The `TouchController` scene calls `DisplayServer.is_touchscreen_available()` on 
 
 ---
 
+### 4.18 Controller Input
+
+**FR-CI-01: Supported controllers**
+The game supports any XInput / DirectInput / SDL2-compatible gamepad recognised by Godot 4's joypad system. Explicitly tested targets:
+- Sony DualSense (PS5)
+- Sony DualShock 4 (PS4)
+- Xbox Series X/S controller
+- Xbox One controller
+- Steam Controller / Steam Deck controls
+- Generic HID gamepads (Steam Input remapping)
+
+**FR-CI-02: Analog movement**
+The left analog stick drives 8-directional movement with full analogue strength (deadzone 0.5). Input Map action `move_left/right/up/down` accept `InputEventJoypadMotion` on axis 0 (horizontal) and axis 1 (vertical).
+
+**FR-CI-03: Button mapping**
+| Input Map action | Keyboard | DS5 / DS4 | Xbox | Steam Deck |
+|-----------------|----------|-----------|------|------------|
+| `move_left` | A / ← | L-Stick ← | L-Stick ← | L-Stick ← |
+| `move_right` | D / → | L-Stick → | L-Stick → | L-Stick → |
+| `move_up` | W / ↑ | L-Stick ↑ | L-Stick ↑ | L-Stick ↑ |
+| `move_down` | S / ↓ | L-Stick ↓ | L-Stick ↓ | L-Stick ↓ |
+| `interact` | E | Cross (✕) | A | A |
+| `check_needs` | T | Triangle (△) | Y | Y |
+| `open_inventory` | I | Square (□) | X | X |
+| `pause` | Esc | Options | Menu | ☰ |
+
+**FR-CI-04: Hot-plug**
+Controllers can be connected or disconnected at any time without restarting the game. Godot 4's built-in joypad detection handles hot-plug automatically.
+
+**FR-CI-05: Remapping**
+All controller bindings are defined in the Godot Input Map. The pause-menu Settings screen (FR-UI-07) must include a rebinding interface for both keyboard and controller actions.
+
+---
+
 ## 5. Non-Functional Requirements
 
 **NFR-PE-01:** ≥60 FPS on mid-range hardware at 1080p.
@@ -567,6 +603,9 @@ The `TouchController` scene calls `DisplayServer.is_touchscreen_available()` on 
 **NFR-PO-01:** Runs unmodified on Linux, macOS, Windows via Godot 4 export.
 **NFR-TS-01:** All core gameplay actions (movement, interact, check needs, pause) are reachable via on-screen touch controls with no keyboard required.
 **NFR-TS-02:** Touch controls must not interfere with keyboard or gamepad input when multiple input devices are active simultaneously.
+**NFR-CI-01:** All core gameplay actions are fully playable with a gamepad alone (no keyboard or mouse required during gameplay).
+**NFR-CI-02:** Controller bindings use Godot's Input Map so they are remappable by the player without code changes.
+**NFR-CI-03:** The game must not produce unhandled joypad errors or crashes when a controller is connected or disconnected mid-session.
 
 ---
 
