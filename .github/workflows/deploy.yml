@@ -14,26 +14,42 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
+env:
+  GODOT_VERSION: "4.4"
+  GODOT_RELEASE: "stable"
+
 jobs:
   export:
     name: Export Web
     runs-on: ubuntu-latest
-    container:
-      image: barichello/godot-ci:4.4
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           lfs: true
 
-      - name: Setup export templates
+      - name: Install Godot
         run: |
-          TEMPLATES_SRC="/root/.local/share/godot/export_templates/4.4.stable"
-          TEMPLATES_DST="$HOME/.local/share/godot/export_templates/4.4.stable"
-          mkdir -vp "$(dirname "$TEMPLATES_DST")"
-          if [ "$TEMPLATES_SRC" != "$TEMPLATES_DST" ]; then
-            mv "$TEMPLATES_SRC" "$TEMPLATES_DST"
-          fi
+          FILENAME="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_linux.x86_64"
+          wget -q \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${FILENAME}.zip" \
+            -O /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/
+          sudo install -m 755 "/tmp/${FILENAME}" /usr/local/bin/godot
+
+      - name: Install export templates
+        run: |
+          TPZNAME="Godot_v${GODOT_VERSION}-${GODOT_RELEASE}_export_templates.tpz"
+          wget -q \
+            "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_RELEASE}/${TPZNAME}" \
+            -O /tmp/templates.tpz
+          mkdir -p ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}
+          unzip -q /tmp/templates.tpz -d /tmp/godot-templates/
+          mv /tmp/godot-templates/templates/* \
+            ~/.local/share/godot/export_templates/${GODOT_VERSION}.${GODOT_RELEASE}/
+
+      - name: Import assets
+        run: godot --headless --import || true
 
       - name: Export Web build
         run: |
