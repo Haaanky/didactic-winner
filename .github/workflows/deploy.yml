@@ -1,0 +1,64 @@
+name: Export and Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  export:
+    name: Export Web
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Setup export templates
+        run: |
+          TEMPLATES_SRC="/root/.local/share/godot/export_templates/4.4.stable"
+          TEMPLATES_DST="$HOME/.local/share/godot/export_templates/4.4.stable"
+          mkdir -vp "$(dirname "$TEMPLATES_DST")"
+          if [ "$TEMPLATES_SRC" != "$TEMPLATES_DST" ]; then
+            mv "$TEMPLATES_SRC" "$TEMPLATES_DST"
+          fi
+
+      - name: Export Web build
+        run: |
+          mkdir -vp build/web
+          godot --headless --export-release "Web" build/web/index.html
+
+      - name: Add Cross-Origin Isolation service worker
+        run: |
+          curl -fsSL -o build/web/coi-serviceworker.js \
+            https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker/coi-serviceworker.js
+          sed -i 's|</head>|<script src="coi-serviceworker.js"></script>\n</head>|' build/web/index.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: export
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
