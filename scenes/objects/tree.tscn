@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/tree.gd" id="1_tree"]
+
+[sub_resource type="RectangleShape2D" id="1_trunkshape"]
+size = Vector2(20, 32)
+
+[sub_resource type="CircleShape2D" id="2_interactshape"]
+radius = 24.0
+
+[node name="Tree" type="Node2D"]
+script = ExtResource("1_tree")
+
+[node name="TrunkSprite" type="Sprite2D" parent="."]
+
+[node name="StumpSprite" type="Sprite2D" parent="."]
+visible = false
+
+[node name="Collision" type="StaticBody2D" parent="."]
+
+[node name="TrunkShape" type="CollisionShape2D" parent="Collision"]
+shape = SubResource("1_trunkshape")
+
+[node name="InteractArea" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 0
+
+[node name="InteractShape" type="CollisionShape2D" parent="InteractArea"]
+shape = SubResource("2_interactshape")
