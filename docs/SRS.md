@@ -13,6 +13,8 @@
 2. [Overall Description](#2-overall-description)
 3. [Requirements Extraction from Pitch](#3-requirements-extraction-from-pitch)
 4. [Functional Requirements](#4-functional-requirements)
+   - 4.17 [Touchscreen Input](#417-touchscreen-input)
+   - 4.18 [Controller Input](#418-controller-input)
 5. [Non-Functional Requirements](#5-non-functional-requirements)
 6. [Constraints & Assumptions](#6-constraints--assumptions)
 7. [Glossary](#7-glossary)
@@ -68,9 +70,9 @@ The game is a walking sim / survival sim hybrid. The player walks out into the w
 - Players who enjoy long-term projects and emergent storytelling
 
 ### 2.4 Operating Environment
-- Platform: PC desktop (Linux, macOS, Windows)
+- Platform: PC desktop (Linux, macOS, Windows); mobile (Android, iOS) as an optional target
 - Engine: Godot 4, GDScript
-- Input: Keyboard + Mouse
+- Input: Keyboard + Mouse (primary); gamepad (DS5, DS4, Xbox, Steam Controller, generic HID); touchscreen (optional, auto-detected)
 
 ---
 
@@ -529,6 +531,66 @@ All async features are disabled when playing offline. The game is fully playable
 
 ---
 
+### 4.17 Touchscreen Input
+
+**FR-TS-01: Virtual joystick**
+On touchscreen devices, touching the left 45 % of the viewport spawns a floating virtual joystick centred on the initial touch point. Dragging within `JOYSTICK_RADIUS` (80 px) moves the joystick knob and drives 8-directional movement with analogue strength proportional to drag distance. Movement stops and the joystick hides when the finger lifts.
+
+**FR-TS-02: On-screen action buttons**
+Three fixed buttons are rendered in the bottom-right corner on touchscreen devices:
+| Button | Label | Input Map action |
+|--------|-------|-----------------|
+| Interact | E | `interact` |
+| Check Needs | T | `check_needs` |
+| Pause | \|\| | `pause` |
+
+Each button fires a press event on `button_down` and a release event on `button_up` via `Input.parse_input_event(InputEventAction)`, triggering the same handlers as their keyboard equivalents.
+
+**FR-TS-03: Auto-visibility**
+The `TouchController` scene calls `DisplayServer.is_touchscreen_available()` on `_ready()`. If the device reports no touchscreen, the entire controller hides and no touch-related processing runs. On desktop the touch controls are invisible; on a touchscreen device they are always visible during gameplay.
+
+**FR-TS-04: Touch controller layer**
+`TouchController` is a `CanvasLayer` at layer 10, rendered above the gameplay world and the standard HUD (layer 1) but below modal dialogs.
+
+**FR-TS-05: Mouse-from-touch emulation**
+`Project Settings → Input Devices → Pointing → Emulate Mouse From Touch` is enabled so that all standard UI controls (menus, buttons) respond correctly to finger taps without requiring special-case handling.
+
+---
+
+### 4.18 Controller Input
+
+**FR-CI-01: Supported controllers**
+The game supports any XInput / DirectInput / SDL2-compatible gamepad recognised by Godot 4's joypad system. Explicitly tested targets:
+- Sony DualSense (PS5)
+- Sony DualShock 4 (PS4)
+- Xbox Series X/S controller
+- Xbox One controller
+- Steam Controller / Steam Deck controls
+- Generic HID gamepads (Steam Input remapping)
+
+**FR-CI-02: Analog movement**
+The left analog stick drives 8-directional movement with full analogue strength (deadzone 0.5). Input Map action `move_left/right/up/down` accept `InputEventJoypadMotion` on axis 0 (horizontal) and axis 1 (vertical).
+
+**FR-CI-03: Button mapping**
+| Input Map action | Keyboard | DS5 / DS4 | Xbox | Steam Deck |
+|-----------------|----------|-----------|------|------------|
+| `move_left` | A / ← | L-Stick ← | L-Stick ← | L-Stick ← |
+| `move_right` | D / → | L-Stick → | L-Stick → | L-Stick → |
+| `move_up` | W / ↑ | L-Stick ↑ | L-Stick ↑ | L-Stick ↑ |
+| `move_down` | S / ↓ | L-Stick ↓ | L-Stick ↓ | L-Stick ↓ |
+| `interact` | E | Cross (✕) | A | A |
+| `check_needs` | T | Triangle (△) | Y | Y |
+| `open_inventory` | I | Square (□) | X | X |
+| `pause` | Esc | Options | Menu | ☰ |
+
+**FR-CI-04: Hot-plug**
+Controllers can be connected or disconnected at any time without restarting the game. Godot 4's built-in joypad detection handles hot-plug automatically.
+
+**FR-CI-05: Remapping**
+All controller bindings are defined in the Godot Input Map. The pause-menu Settings screen (FR-UI-07) must include a rebinding interface for both keyboard and controller actions.
+
+---
+
 ## 5. Non-Functional Requirements
 
 **NFR-PE-01:** ≥60 FPS on mid-range hardware at 1080p.
@@ -539,6 +601,11 @@ All async features are disabled when playing offline. The game is fully playable
 **NFR-MA-01:** All scripts follow conventions in CLAUDE.md (GDScript, snake_case, signals over coupling).
 **NFR-MA-02:** Each system (needs, crafting, seasons, paths, etc.) is a separate, self-contained scene/script.
 **NFR-PO-01:** Runs unmodified on Linux, macOS, Windows via Godot 4 export.
+**NFR-TS-01:** All core gameplay actions (movement, interact, check needs, pause) are reachable via on-screen touch controls with no keyboard required.
+**NFR-TS-02:** Touch controls must not interfere with keyboard or gamepad input when multiple input devices are active simultaneously.
+**NFR-CI-01:** All core gameplay actions are fully playable with a gamepad alone (no keyboard or mouse required during gameplay).
+**NFR-CI-02:** Controller bindings use Godot's Input Map so they are remappable by the player without code changes.
+**NFR-CI-03:** The game must not produce unhandled joypad errors or crashes when a controller is connected or disconnected mid-session.
 
 ---
 
@@ -551,9 +618,11 @@ All async features are disabled when playing offline. The game is fully playable
 | C-03 | Visual style: 2D (Sips described 3D; our implementation adapts to 2D) |
 | C-04 | No real-time online multiplayer in initial release |
 | C-05 | Async multiplayer (geocaching/notes) is v2.0+ feature |
+| C-06 | Mobile export (Android/iOS) is an optional v2.0+ target; v1.0 ships desktop only |
 | A-01 | "The Dude" is gender-neutral — character customisation at start |
 | A-02 | Alaska is an aesthetic/atmospheric setting, not a geographic simulation |
 | A-03 | The game is intentionally open-ended — there is no win state |
+| A-04 | Touch controls are additive — the game remains fully playable with keyboard + mouse when no touchscreen is present |
 
 ---
 
