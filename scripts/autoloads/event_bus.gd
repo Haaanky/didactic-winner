@@ -4,43 +4,50 @@ extends Node
 ## Global signal relay for decoupled systems.
 ## All cross-system events are emitted through here.
 
-# Player
+# ── Player ────────────────────────────────────────────────────────────────────
 signal player_died()
+signal player_health_changed(new_health: float)
 signal player_respawned()
 signal item_picked_up(item_id: String, quantity: int)
 signal item_dropped(item_id: String, quantity: int)
 
-# Needs
+# ── Game state ────────────────────────────────────────────────────────────────
+signal game_paused(is_paused: bool)
+
+# ── Needs ─────────────────────────────────────────────────────────────────────
 signal need_changed(need: String, value: float)
 signal need_critical(need: String)
 signal need_depleted(need: String)
 signal health_changed(value: float)
 
-# Skills
+# ── Skills ────────────────────────────────────────────────────────────────────
 signal skill_xp_gained(skill: String, amount: float)
 signal skill_leveled_up(skill: String, new_level: int)
 
-# Time
+# ── Time ──────────────────────────────────────────────────────────────────────
 signal hour_passed(hour: int)
 signal day_passed(day: int)
 signal season_changed(season: int)
 
-# Weather
+# ── Weather ───────────────────────────────────────────────────────────────────
 signal weather_changed(weather_type: int)
-signal temperature_changed(temperature: float)
+signal temperature_changed(new_temp: float)
 
-# World
-signal interactable_focused(interactable: Node)
+# ── Interaction ───────────────────────────────────────────────────────────────
+signal interactable_focused(target: Node)
 signal interactable_unfocused()
+signal interaction_triggered(target: Node)
+
+# ── World ─────────────────────────────────────────────────────────────────────
 signal campfire_lit(campfire: Node)
 signal campfire_extinguished(campfire: Node)
 signal tree_chopped(position: Vector2, logs_yielded: int)
 
-# Save
+# ── Save ──────────────────────────────────────────────────────────────────────
 signal game_saved(slot: int)
 signal game_loaded(slot: int)
 
-# UI
+# ── UI ────────────────────────────────────────────────────────────────────────
 signal journal_entry_added(entry: String)
 signal ui_screen_opened(screen_name: String)
 signal ui_screen_closed(screen_name: String)

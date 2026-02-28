@@ -14,14 +14,12 @@ const SEASON_TRACKS: Dictionary = {
 	TimeManager.Season.WINTER: "res://assets/audio/winter_outdoor.ogg",
 }
 const INDOOR_TRACK: String = "res://assets/audio/cabin_interior.ogg"
-const TOWN_TRACK: String = "res://assets/audio/town.ogg"
 const BLIZZARD_TRACK: String = "res://assets/audio/blizzard.ogg"
 
 const CROSSFADE_DURATION: float = 2.0
 
-@onready var _music_player_a: AudioStreamPlayer = $MusicPlayerA
-@onready var _music_player_b: AudioStreamPlayer = $MusicPlayerB
-
+var _music_player_a: AudioStreamPlayer
+var _music_player_b: AudioStreamPlayer
 var _active_player: AudioStreamPlayer
 var _inactive_player: AudioStreamPlayer
 var _is_indoors: bool = false
@@ -29,6 +27,14 @@ var _crossfade_tween: Tween
 
 
 func _ready() -> void:
+	_music_player_a = AudioStreamPlayer.new()
+	_music_player_a.bus = MUSIC_BUS
+	add_child(_music_player_a)
+
+	_music_player_b = AudioStreamPlayer.new()
+	_music_player_b.bus = MUSIC_BUS
+	add_child(_music_player_b)
+
 	_active_player = _music_player_a
 	_inactive_player = _music_player_b
 	EventBus.season_changed.connect(_on_season_changed)
@@ -65,12 +71,28 @@ func set_indoors(indoors: bool) -> void:
 	_play_contextual_music()
 
 
-func set_music_volume(linear: float) -> void:
-	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(MUSIC_BUS), linear_to_db(linear))
+func set_music_volume(volume_db: float) -> void:
+	var bus_index: int = AudioServer.get_bus_index(MUSIC_BUS)
+	if bus_index >= 0:
+		AudioServer.set_bus_volume_db(bus_index, volume_db)
 
 
-func set_sfx_volume(linear: float) -> void:
-	AudioServer.set_bus_volume_db(AudioServer.get_bus_index(SFX_BUS), linear_to_db(linear))
+func set_sfx_volume(volume_db: float) -> void:
+	var bus_index: int = AudioServer.get_bus_index(SFX_BUS)
+	if bus_index >= 0:
+		AudioServer.set_bus_volume_db(bus_index, volume_db)
+
+
+func mute_music(muted: bool) -> void:
+	var bus_index: int = AudioServer.get_bus_index(MUSIC_BUS)
+	if bus_index >= 0:
+		AudioServer.set_bus_mute(bus_index, muted)
+
+
+func mute_sfx(muted: bool) -> void:
+	var bus_index: int = AudioServer.get_bus_index(SFX_BUS)
+	if bus_index >= 0:
+		AudioServer.set_bus_mute(bus_index, muted)
 
 
 func _play_contextual_music() -> void:
@@ -115,8 +137,6 @@ func _on_season_changed(_season: int) -> void:
 		_play_contextual_music()
 
 
-func _on_weather_changed(weather: int) -> void:
-	if weather == WeatherManager.WeatherType.BLIZZARD and not _is_indoors:
-		_play_contextual_music()
-	elif not _is_indoors:
+func _on_weather_changed(_weather: int) -> void:
+	if not _is_indoors:
 		_play_contextual_music()

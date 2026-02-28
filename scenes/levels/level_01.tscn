@@ -1,0 +1,29 @@
+[gd_scene load_steps=5 format=3 uid="uid://level01scene"]
+
+[ext_resource type="Script" path="res://scripts/world/day_night_layer.gd" id="1_daynight"]
+[ext_resource type="PackedScene" uid="uid://playerscene1" path="res://scenes/characters/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" uid="uid://hudscene001" path="res://scenes/ui/hud.tscn" id="3_hud"]
+
+[node name="Level01" type="Node2D"]
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="TerrainLayer" type="TileMapLayer" parent="World"]
+collision_enabled = true
+
+[node name="DecoLayer" type="TileMapLayer" parent="World"]
+
+[node name="SnowLayer" type="TileMapLayer" parent="World"]
+
+[node name="Trees" type="Node2D" parent="World"]
+
+[node name="Objects" type="Node2D" parent="World"]
+
+[node name="DayNightLayer" type="CanvasModulate" parent="."]
+color = Color(1, 1, 1, 1)
+script = ExtResource("1_daynight")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+position = Vector2(640, 360)
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]

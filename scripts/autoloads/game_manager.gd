@@ -2,42 +2,24 @@ class_name GameManager
 extends Node
 
 ## Global state manager. Handles pause, difficulty, and top-level game flow.
+## State transitions can be driven directly or via EventBus.game_paused.
 
 enum DifficultyMode { EASY, NORMAL, HARDCORE }
-enum GameState { MAIN_MENU, PLAYING, PAUSED, DEAD, LOADING }
+enum GameState { MENU, PLAYING, PAUSED, GAME_OVER }
 
 const DEFAULT_DIFFICULTY: DifficultyMode = DifficultyMode.NORMAL
 
 var difficulty: DifficultyMode = DEFAULT_DIFFICULTY
-var game_state: GameState = GameState.MAIN_MENU
+var current_state: GameState = GameState.MENU
 
 
 func _ready() -> void:
+	EventBus.game_paused.connect(_on_game_paused)
 	EventBus.player_died.connect(_on_player_died)
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("pause") and game_state == GameState.PLAYING:
-		pause_game()
-	elif event.is_action_pressed("pause") and game_state == GameState.PAUSED:
-		resume_game()
-
-
-func start_game() -> void:
-	game_state = GameState.PLAYING
-	TimeManager.set_paused(false)
-
-
-func pause_game() -> void:
-	game_state = GameState.PAUSED
-	TimeManager.set_paused(true)
-	EventBus.ui_screen_opened.emit("pause_menu")
-
-
-func resume_game() -> void:
-	game_state = GameState.PLAYING
-	TimeManager.set_paused(false)
-	EventBus.ui_screen_closed.emit("pause_menu")
+func set_state(new_state: GameState) -> void:
+	current_state = new_state
 
 
 func set_difficulty(mode: DifficultyMode) -> void:
@@ -45,9 +27,20 @@ func set_difficulty(mode: DifficultyMode) -> void:
 
 
 func is_playing() -> bool:
-	return game_state == GameState.PLAYING
+	return current_state == GameState.PLAYING
+
+
+func _on_game_paused(is_paused: bool) -> void:
+	if is_paused:
+		current_state = GameState.PAUSED
+		get_tree().paused = true
+		TimeManager.set_paused(true)
+	else:
+		current_state = GameState.PLAYING
+		get_tree().paused = false
+		TimeManager.set_paused(false)
 
 
 func _on_player_died() -> void:
-	game_state = GameState.DEAD
+	current_state = GameState.GAME_OVER
 	TimeManager.set_paused(true)

@@ -2,11 +2,13 @@ class_name HUD
 extends CanvasLayer
 
 ## Diegetic-first HUD. Needs bars are hidden by default.
-## Critical need icons appear at screen edge when any need drops below 20%.
+## Critical icons appear when any need drops below 20%.
 ## Pressing "check_needs" shows the full needs panel for a few seconds.
+## Health bar updates via EventBus.player_health_changed.
 
 const DISPLAY_DURATION: float = 4.0
 const CRITICAL_THRESHOLD: float = 20.0
+const HEALTH_MAX: float = 100.0
 
 @export var needs_panel: Control
 @export var hunger_bar: ProgressBar
@@ -14,6 +16,7 @@ const CRITICAL_THRESHOLD: float = 20.0
 @export var rest_bar: ProgressBar
 @export var morale_bar: ProgressBar
 @export var health_bar: ProgressBar
+@export var health_label: Label
 @export var critical_icons: Control
 @export var hunger_critical_icon: TextureRect
 @export var warmth_critical_icon: TextureRect
@@ -28,11 +31,12 @@ var _showing_needs: bool = false
 func _ready() -> void:
 	EventBus.need_changed.connect(_on_need_changed)
 	EventBus.need_critical.connect(_on_need_critical)
-	EventBus.health_changed.connect(_on_health_changed)
+	EventBus.player_health_changed.connect(_on_player_health_changed)
 	EventBus.hour_passed.connect(_on_hour_passed)
 	EventBus.ui_screen_opened.connect(_on_ui_screen_opened)
 	if needs_panel != null:
 		needs_panel.hide()
+	_refresh_health(HEALTH_MAX)
 
 
 func _process(delta: float) -> void:
@@ -49,6 +53,13 @@ func _show_needs_panel() -> void:
 	_hide_timer = DISPLAY_DURATION
 	if needs_panel != null:
 		needs_panel.show()
+
+
+func _refresh_health(value: float) -> void:
+	if health_bar != null:
+		health_bar.value = value
+	if health_label != null:
+		health_label.text = "Health: %d" % int(value)
 
 
 func _on_need_changed(need: String, value: float) -> void:
@@ -79,9 +90,8 @@ func _on_need_critical(_need: String) -> void:
 	_show_needs_panel()
 
 
-func _on_health_changed(value: float) -> void:
-	if health_bar != null:
-		health_bar.value = value
+func _on_player_health_changed(value: float) -> void:
+	_refresh_health(value)
 
 
 func _on_hour_passed(_hour: int) -> void:

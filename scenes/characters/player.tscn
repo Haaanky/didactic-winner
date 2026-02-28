@@ -1,6 +1,6 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3 uid="uid://playerscene1"]
 
-[ext_resource type="Script" path="res://scripts/player/player_controller.gd" id="1_player"]
+[ext_resource type="Script" uid="uid://scrplayer001" path="res://scripts/player/player_controller.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/player/needs_component.gd" id="2_needs"]
 [ext_resource type="Script" path="res://scripts/player/inventory_component.gd" id="3_inv"]
 [ext_resource type="Script" path="res://scripts/player/skill_component.gd" id="4_skill"]
@@ -9,14 +9,17 @@
 radius = 8.0
 height = 16.0
 
-[sub_resource type="CircleShape2D" id="2_rayshape"]
-radius = 2.0
-
-[sub_resource type="SphereShape2D" id="3_heatshape"]
+[sub_resource type="CircleShape2D" id="2_heatshape"]
 radius = 80.0
 
-[node name="PlayerController" type="CharacterBody2D"]
+[node name="Player" type="CharacterBody2D"]
+collision_layer = 1
+collision_mask = 2
 script = ExtResource("1_player")
+
+[node name="Visual" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-8, -12, 8, -12, 8, 12, -8, 12)
+color = Color(0.22, 0.47, 0.75, 1)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 
@@ -36,13 +39,18 @@ script = ExtResource("4_skill")
 [node name="InteractRay" type="RayCast2D" parent="."]
 enabled = true
 target_position = Vector2(0, 32)
+collision_mask = 2
 
 [node name="HeatDetector" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 0
 
 [node name="HeatDetectorShape" type="CollisionShape2D" parent="HeatDetector"]
-shape = SubResource("3_heatshape")
+shape = SubResource("2_heatshape")
 
 [node name="FootstepPlayer" type="AudioStreamPlayer2D" parent="."]
 bus = &"SFX"
 
-[connection signal="interacted_with" from="." to="." method="_try_interact"]
+[node name="Camera2D" type="Camera2D" parent="."]
+position_smoothing_enabled = true
+position_smoothing_speed = 5.0
