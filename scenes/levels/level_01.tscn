@@ -7,6 +7,15 @@
 
 [node name="Level01" type="Node2D"]
 
+[node name="BackgroundLayer" type="CanvasLayer" parent="."]
+layer = -10
+
+[node name="Background" type="ColorRect" parent="BackgroundLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.35, 0.42, 0.28, 1)
+
 [node name="World" type="Node2D" parent="."]
 
 [node name="TerrainLayer" type="TileMapLayer" parent="World"]
