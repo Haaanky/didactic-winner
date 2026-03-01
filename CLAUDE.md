@@ -232,6 +232,26 @@ didactic-winner/
 | `connect("signal", self, "_method")` | `signal.connect(_method)` |
 | `OS.get_ticks_msec()` | `Time.get_ticks_msec()` |
 
+### Known Godot 4 Engine Pitfalls
+
+These are confirmed bugs or footguns encountered in this project. Check for these patterns whenever debugging unexplained silent failures.
+
+| Symptom | Root cause | Fix |
+|---------|-----------|-----|
+| `change_scene_to_file()` does nothing when called from a `Button.pressed` signal handler in an exported build | The scene tree is mid-frame during signal dispatch; the scene change is silently discarded | Use `.call_deferred()`: `get_tree().change_scene_to_file.call_deferred(path)` |
+
+**Rule:** Any call to `get_tree().change_scene_to_file()` in this project **must** use `call_deferred()`. Never call it directly from a signal callback.
+
+```gdscript
+# Wrong — silently fails in exported builds when called from a signal
+get_tree().change_scene_to_file(LEVEL_SCENE)
+
+# Correct — deferred so the scene tree is safe to modify
+get_tree().change_scene_to_file.call_deferred(LEVEL_SCENE)
+```
+
+---
+
 ### Installation
 
 Download from https://godotengine.org/download — choose **Godot 4 (Standard)**, no Mono/.NET needed unless C# is used.

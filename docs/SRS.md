@@ -619,6 +619,7 @@ All controller bindings are defined in the Godot Input Map. The pause-menu Setti
 | C-04 | No real-time online multiplayer in initial release |
 | C-05 | Async multiplayer (geocaching/notes) is v2.0+ feature |
 | C-06 | Mobile export (Android/iOS) is an optional v2.0+ target; v1.0 ships desktop only |
+| C-07 | Known Godot 4 engine bug: `SceneTree.change_scene_to_file()` silently fails when called directly from a signal callback in exported builds. All scene transitions must use `.call_deferred()`. This is documented in `CLAUDE.md` under "Known Godot 4 Engine Pitfalls" and must be checked whenever diagnosing silent scene-change failures. |
 | A-01 | "The Dude" is gender-neutral — character customisation at start |
 | A-02 | Alaska is an aesthetic/atmospheric setting, not a geographic simulation |
 | A-03 | The game is intentionally open-ended — there is no win state |
