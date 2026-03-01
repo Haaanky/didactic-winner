@@ -45,10 +45,12 @@ custom_minimum_size = Vector2(0, 24)
 
 [node name="PlayButton" type="Button" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
+custom_minimum_size = Vector2(240, 56)
 text = "Play"
 theme_override_font_sizes/font_size = 20
 
 [node name="QuitButton" type="Button" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
+custom_minimum_size = Vector2(240, 56)
 text = "Quit"
 theme_override_font_sizes/font_size = 20
