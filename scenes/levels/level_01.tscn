@@ -1,5 +1,6 @@
-[gd_scene load_steps=6 format=3 uid="uid://level01scene"]
+[gd_scene load_steps=7 format=3 uid="uid://level01scene"]
 
+[ext_resource type="Script" path="res://scripts/world/background.gd" id="5_bg"]
 [ext_resource type="Script" path="res://scripts/world/day_night_layer.gd" id="1_daynight"]
 [ext_resource type="PackedScene" uid="uid://playerscene1" path="res://scenes/characters/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" uid="uid://hudscene001" path="res://scenes/ui/hud.tscn" id="3_hud"]
@@ -7,14 +8,9 @@
 
 [node name="Level01" type="Node2D"]
 
-[node name="BackgroundLayer" type="CanvasLayer" parent="."]
-layer = -10
-
-[node name="Background" type="ColorRect" parent="BackgroundLayer"]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-color = Color(0.35, 0.42, 0.28, 1)
+[node name="WorldBackground" type="Node2D" parent="."]
+z_index = -1
+script = ExtResource("5_bg")
 
 [node name="World" type="Node2D" parent="."]
 
