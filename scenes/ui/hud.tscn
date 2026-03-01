@@ -4,6 +4,8 @@
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
+health_bar = NodePath("MarginContainer/VBoxContainer/HealthBar")
+health_label = NodePath("MarginContainer/VBoxContainer/HealthLabel")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 1
