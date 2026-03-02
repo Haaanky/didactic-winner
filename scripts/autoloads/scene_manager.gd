@@ -15,7 +15,7 @@ func _process(_delta: float) -> void:
 	if not ResourceLoader.exists(target):
 		push_error("SceneManager: scene file not found — %s" % target)
 		return
-	get_tree().change_scene_to_file(target)
+	get_tree().change_scene_to_file.call_deferred(target)
 
 
 func go_to_main_menu() -> void:
