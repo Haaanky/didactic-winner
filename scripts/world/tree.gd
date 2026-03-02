@@ -1,4 +1,4 @@
-class_name Tree
+class_name WorldTree
 extends Node2D
 
 ## Choppable tree. Yields logs based on player lumberjacking skill.
