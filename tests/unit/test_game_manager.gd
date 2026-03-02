@@ -4,11 +4,13 @@ extends GutTest
 # Each test creates a fresh GameManager instance — it does NOT use the autoload
 # singleton so tests remain independent of runtime order.
 
-var _gm: GameManager
+const _GameManagerScript := preload("res://scripts/autoloads/game_manager.gd")
+
+var _gm: Node
 
 
 func before_each() -> void:
-	_gm = GameManager.new()
+	_gm = _GameManagerScript.new()
 	add_child(_gm)
 
 

@@ -1,4 +1,3 @@
-class_name AudioManager
 extends Node
 
 ## Routes all game audio through music and SFX buses.

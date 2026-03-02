@@ -1,4 +1,3 @@
-class_name GameManager
 extends Node
 
 ## Global state manager. Handles pause, difficulty, and top-level game flow.

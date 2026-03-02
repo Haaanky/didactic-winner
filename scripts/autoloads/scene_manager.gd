@@ -1,4 +1,3 @@
-class_name SceneManager
 extends Node
 
 const MAIN_MENU_SCENE := "res://scenes/main.tscn"

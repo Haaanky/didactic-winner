@@ -1,4 +1,3 @@
-class_name TimeManager
 extends Node
 
 ## Advances in-game time and emits signals for all time-dependent systems.

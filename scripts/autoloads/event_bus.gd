@@ -1,4 +1,3 @@
-class_name EventBus
 extends Node
 
 ## Global signal relay for decoupled systems.
