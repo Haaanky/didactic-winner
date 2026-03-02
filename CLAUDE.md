@@ -167,6 +167,54 @@ var state: State = State.IDLE
 
 ---
 
+### 13. Error Logging
+
+Every unexpected condition at a system boundary must be reported — silent failures are the leading cause of hard-to-trace bugs.
+
+**Godot 4 logging functions:**
+
+| Function | Severity | Use when |
+|---|---|---|
+| `push_error("ClassName: message — %s" % context)` | Error (red) | Boundary failure that prevents an operation from completing |
+| `push_warning("ClassName: message — %s" % context)` | Warning (yellow) | Unexpected but non-fatal state |
+| `assert(condition, "message")` | Debug crash | Internal invariant that must always hold; no-op in release builds |
+
+**Always log at these boundaries:**
+- `ResourceLoader.exists()` returns `false` for a required resource
+- `FileAccess.open()` returns `null` (file not found or permission denied)
+- An index or enum value is out of expected range when received from external data
+- A public API receives a value where no valid fallback exists
+
+**Format rules:**
+- Always prefix with the class name: `"SaveManager: could not open %s for writing" % path`
+- Include every variable value needed to reproduce the problem
+- Describe what was *attempted*, not just what happened: `"could not open %s for writing"` not `"file error"`
+
+**Never log:**
+- Expected null/absent states already handled by normal code flow (e.g. unset `@export` nodes)
+- Internal helpers whose inputs are guaranteed valid by the caller
+- "Not found" when absence is a normal outcome (e.g. checking whether a save slot exists)
+
+**Testing requirement:**
+- Every `push_error()` and `push_warning()` site must be covered by a GUT test that exercises the error path and asserts the resulting state — see [Testing](#testing)
+
+```gdscript
+# Wrong — silent failure gives no diagnostic information
+func go_to_level(scene_path: String) -> void:
+    if not ResourceLoader.exists(scene_path):
+        return
+    get_tree().change_scene_to_file(scene_path)
+
+# Correct — log the failure so it appears in the editor and in exported-build logs
+func go_to_level(scene_path: String) -> void:
+    if not ResourceLoader.exists(scene_path):
+        push_error("SceneManager: scene file not found — %s" % scene_path)
+        return
+    get_tree().change_scene_to_file(scene_path)
+```
+
+---
+
 ## Project Overview
 
 **Dudes in Alaska** is a 2D game built with [Godot 4](https://godotengine.org/) — a free, open-source game engine. The project lives in this repository and targets desktop platforms (Linux, macOS, Windows).
@@ -459,6 +507,72 @@ func after_each() -> void:
 
 func test_initial_value_is_zero() -> void:
     assert_eq(_subject.value, 0)
+```
+
+---
+
+### UI Tests
+
+After **any** change to a UI scene or its attached script, add or update tests in `tests/unit/test_<ui_name>.gd` covering every input method and every supported platform.
+
+**Required input coverage per interactive UI element:**
+
+| Input method | How to simulate in GUT |
+|---|---|
+| Mouse click / keyboard Enter | `element.pressed.emit()` — triggers the Button signal path |
+| Touch tap | Construct `InputEventScreenTouch`, pass to `node._input(event)` |
+| Keyboard navigation | Construct `InputEventKey` (Tab / Enter / Space), pass to `node._input(event)` |
+
+**Platform matrix** — the same test file must cover behaviour for all three targets:
+
+| Platform | Primary inputs | Notes |
+|---|---|---|
+| Desktop (Linux / Windows) | Mouse + keyboard | Standard Button signal path |
+| Web (GitHub Pages) | Mouse + touch | Browser may emit both; test each path independently |
+| Mobile | Touch only | Touch path via `_input(InputEventScreenTouch)` |
+
+Because the test runner is platform-agnostic, simulate every input path in code rather than relying on manual per-platform testing.
+
+**Per-scene test checklist:**
+- Each interactive element has a separate test for each input method that can activate it
+- Tests assert the *state after* the action (e.g. `SceneManager._queued_scene`, signal emission) — not just that the function ran without crashing
+- Touch-position tests use `button.get_global_rect().get_center()` — never hardcoded pixel coordinates
+- `before_each` / `after_each` restore any global state mutated during the test (e.g. `SceneManager._queued_scene`)
+
+**Example — MainMenu:**
+
+```gdscript
+extends GutTest
+
+const MAIN_MENU_SCENE := preload("res://scenes/main.tscn")
+
+var _menu: MainMenu
+
+
+func before_each() -> void:
+    _menu = MAIN_MENU_SCENE.instantiate() as MainMenu
+    add_child(_menu)
+    await get_tree().process_frame
+
+
+func after_each() -> void:
+    SceneManager._queued_scene = ""
+    _menu.queue_free()
+
+
+# Desktop / web: mouse click or keyboard Enter fires Button.pressed signal
+func test_play_button_pressed_signal_queues_level_01() -> void:
+    _menu.play_button.pressed.emit()
+    assert_eq(SceneManager._queued_scene, SceneManager.LEVEL_01_SCENE)
+
+
+# Web / mobile: raw touch event routed through _input()
+func test_touch_on_play_button_queues_level_01() -> void:
+    var touch := InputEventScreenTouch.new()
+    touch.pressed = true
+    touch.position = _menu.play_button.get_global_rect().get_center()
+    _menu._input(touch)
+    assert_eq(SceneManager._queued_scene, SceneManager.LEVEL_01_SCENE)
 ```
 
 ---

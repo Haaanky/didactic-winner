@@ -8,8 +8,6 @@ extends Control
 @onready var play_button: Button = $CenterContainer/VBoxContainer/PlayButton
 @onready var quit_button: Button = $CenterContainer/VBoxContainer/QuitButton
 
-var _transitioning: bool = false
-
 
 func _ready() -> void:
 	play_button.pressed.connect(_on_play_pressed)
@@ -17,7 +15,7 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if _transitioning or not (event is InputEventScreenTouch):
+	if not (event is InputEventScreenTouch):
 		return
 	var touch := event as InputEventScreenTouch
 	if not touch.pressed:
@@ -31,14 +29,8 @@ func _input(event: InputEvent) -> void:
 
 
 func _on_play_pressed() -> void:
-	if _transitioning:
-		return
-	_transitioning = true
 	SceneManager.go_to_level_01()
 
 
 func _on_quit_pressed() -> void:
-	if _transitioning:
-		return
-	_transitioning = true
 	get_tree().quit()

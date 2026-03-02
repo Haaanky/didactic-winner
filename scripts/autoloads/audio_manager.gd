@@ -104,7 +104,10 @@ func _play_contextual_music() -> void:
 	else:
 		track_path = SEASON_TRACKS.get(TimeManager.current_season, "")
 
-	if track_path.is_empty() or not ResourceLoader.exists(track_path):
+	if track_path.is_empty():
+		return
+	if not ResourceLoader.exists(track_path):
+		push_warning("AudioManager: music track not found — %s" % track_path)
 		return
 
 	var stream: AudioStream = load(track_path)

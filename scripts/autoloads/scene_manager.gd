@@ -4,16 +4,29 @@ extends Node
 const MAIN_MENU_SCENE := "res://scenes/main.tscn"
 const LEVEL_01_SCENE := "res://scenes/levels/level_01.tscn"
 
+var _queued_scene: String = ""
+
+
+func _process(_delta: float) -> void:
+	if _queued_scene.is_empty():
+		return
+	var target: String = _queued_scene
+	_queued_scene = ""
+	if not ResourceLoader.exists(target):
+		push_error("SceneManager: scene file not found — %s" % target)
+		return
+	get_tree().change_scene_to_file(target)
+
 
 func go_to_main_menu() -> void:
 	get_tree().paused = false
 	GameManager.set_state(GameManager.GameState.MENU)
-	get_tree().change_scene_to_file.call_deferred(MAIN_MENU_SCENE)
+	_queued_scene = MAIN_MENU_SCENE
 
 
 func go_to_level(scene_path: String) -> void:
 	GameManager.set_state(GameManager.GameState.PLAYING)
-	get_tree().change_scene_to_file.call_deferred(scene_path)
+	_queued_scene = scene_path
 
 
 func go_to_level_01() -> void:
