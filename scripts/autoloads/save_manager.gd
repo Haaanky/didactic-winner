@@ -21,6 +21,7 @@ func register_player(player: Node) -> void:
 
 func save(slot: int) -> void:
 	if slot < 0 or slot >= MAX_SLOTS:
+		push_error("SaveManager.save: slot out of range — %d (valid: 0–%d)" % [slot, MAX_SLOTS - 1])
 		return
 	var data: Dictionary = {
 		"version": SAVE_VERSION,
@@ -41,12 +42,14 @@ func save(slot: int) -> void:
 
 func load_slot(slot: int) -> bool:
 	if slot < 0 or slot >= MAX_SLOTS:
+		push_error("SaveManager.load_slot: slot out of range — %d (valid: 0–%d)" % [slot, MAX_SLOTS - 1])
 		return false
 	var path: String = SAVE_DIR + "slot_%d.json" % slot
 	if not FileAccess.file_exists(path):
 		return false
 	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
 	if file == null:
+		push_error("SaveManager.load_slot: could not open %s for reading" % path)
 		return false
 	var text: String = file.get_as_text()
 	file.close()

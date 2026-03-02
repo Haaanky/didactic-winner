@@ -12,6 +12,9 @@ func _process(_delta: float) -> void:
 		return
 	var target: String = _queued_scene
 	_queued_scene = ""
+	if not ResourceLoader.exists(target):
+		push_error("SceneManager: scene file not found — %s" % target)
+		return
 	get_tree().change_scene_to_file(target)
 
 
