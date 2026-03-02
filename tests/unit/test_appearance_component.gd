@@ -213,6 +213,7 @@ func test_degrade_clothing_emits_appearance_changed() -> void:
 func test_degrade_clothing_invalid_slot_leaves_others_unchanged() -> void:
 	var before: float = _subject.get_clothing_durability("torso")
 	_subject.degrade_clothing("invalid_slot", 30.0)
+	assert_push_error_count(1)
 	assert_eq(_subject.get_clothing_durability("torso"), before)
 
 
@@ -237,6 +238,7 @@ func test_repair_clothing_emits_appearance_changed() -> void:
 
 func test_repair_clothing_invalid_slot_does_not_crash() -> void:
 	_subject.repair_clothing("invalid_slot")
+	assert_push_error_count(1)
 	assert_eq(_subject.get_clothing_patch_count("torso"), 0)
 
 
