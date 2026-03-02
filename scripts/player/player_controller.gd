@@ -21,6 +21,7 @@ const ENCUMBRANCE_SPEED_PENALTY: float = 0.4
 @export var needs: NeedsComponent
 @export var inventory: InventoryComponent
 @export var skills: SkillComponent
+@export var appearance: AppearanceComponent
 @export var sprite: AnimatedSprite2D
 @export var footstep_player: AudioStreamPlayer2D
 
@@ -87,6 +88,7 @@ func serialise() -> Dictionary:
 		"needs": needs.serialise() if needs != null else {},
 		"inventory": inventory.serialise() if inventory != null else {},
 		"skills": skills.serialise() if skills != null else {},
+		"appearance": appearance.serialise() if appearance != null else {},
 	}
 
 
@@ -101,6 +103,8 @@ func deserialise(data: Dictionary) -> void:
 		inventory.deserialise(data.get("inventory", {}))
 	if skills != null:
 		skills.deserialise(data.get("skills", {}))
+	if appearance != null:
+		appearance.deserialise(data.get("appearance", {}))
 
 
 func _handle_movement(delta: float) -> void:

@@ -46,6 +46,9 @@ signal tree_chopped(position: Vector2, logs_yielded: int)
 signal game_saved(slot: int)
 signal game_loaded(slot: int)
 
+# ── Appearance ────────────────────────────────────────────────────────────────
+signal appearance_changed()
+
 # ── UI ────────────────────────────────────────────────────────────────────────
 signal journal_entry_added(entry: String)
 signal ui_screen_opened(screen_name: String)
