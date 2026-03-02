@@ -1,4 +1,3 @@
-class_name SaveManager
 extends Node
 
 ## Serialises and deserialises the full game state to/from JSON.

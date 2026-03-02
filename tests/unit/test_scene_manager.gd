@@ -8,11 +8,13 @@ extends GutTest
 #   - invalid paths fail the ResourceLoader.exists() guard and return early
 #   - valid-path tests only inspect the queue without calling _process()
 
-var _sm: SceneManager
+const _SceneManagerScript := preload("res://scripts/autoloads/scene_manager.gd")
+
+var _sm: Node
 
 
 func before_each() -> void:
-	_sm = SceneManager.new()
+	_sm = _SceneManagerScript.new()
 	add_child(_sm)
 
 

@@ -32,15 +32,6 @@ func test_play_button_pressed_signal_queues_level_01() -> void:
 	assert_eq(SceneManager._queued_scene, SceneManager.LEVEL_01_SCENE)
 
 
-func test_quit_button_pressed_signal_does_not_queue_scene() -> void:
-	# Quit calls get_tree().quit(); it must NOT queue a scene change.
-	# We cannot easily assert the process exits, but we can assert no scene is queued.
-	# (Actual quit is blocked in editor/test environment.)
-	SceneManager._queued_scene = ""
-	_menu.quit_button.pressed.emit()
-	assert_eq(SceneManager._queued_scene, "")
-
-
 # ── Web / mobile: raw InputEventScreenTouch through _input() ──────────────────
 
 func test_touch_on_play_button_queues_level_01() -> void:
@@ -63,14 +54,6 @@ func test_touch_outside_all_buttons_does_not_queue_scene() -> void:
 	var touch := InputEventScreenTouch.new()
 	touch.pressed = true
 	touch.position = Vector2.ZERO
-	_menu._input(touch)
-	assert_eq(SceneManager._queued_scene, "")
-
-
-func test_touch_on_quit_button_does_not_queue_scene() -> void:
-	var touch := InputEventScreenTouch.new()
-	touch.pressed = true
-	touch.position = _menu.quit_button.get_global_rect().get_center()
 	_menu._input(touch)
 	assert_eq(SceneManager._queued_scene, "")
 

@@ -1,4 +1,3 @@
-class_name WeatherManager
 extends Node
 
 ## Manages ambient temperature and weather events.
