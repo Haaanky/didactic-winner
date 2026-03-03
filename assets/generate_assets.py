@@ -9,7 +9,7 @@ Outputs:
   assets/sprites/tree.png               32×64    (single sprite)
   assets/sprites/stump.png              32×32    (single sprite)
   assets/sprites/tileset_terrain.png   256×256  (8×8 grid of 32×32 tiles)
-  assets/sprites/ui_icons.png           64×16    (4 cols × 1 row of 16×16 icons)
+  assets/sprites/ui_icons.png           80×16    (5 cols × 1 row of 16×16 icons)
 """
 
 from PIL import Image, ImageDraw
@@ -86,6 +86,7 @@ UI_HEART   = (210,  40,  40, 255)
 UI_HUNGER  = (220, 160,  40, 255)
 UI_WARM    = (240, 100,  20, 255)
 UI_REST    = ( 80, 130, 220, 255)
+UI_MORALE  = (170,  80, 210, 255)
 
 
 # ---------------------------------------------------------------------------
@@ -971,10 +972,32 @@ def make_rest_icon() -> Image.Image:
     return img
 
 
+def make_morale_icon() -> Image.Image:
+    img = Image.new("RGBA", (16, 16), T)
+    draw = ImageDraw.Draw(img)
+    # Circle outline (face)
+    draw.ellipse([(1, 1), (14, 14)], outline=UI_MORALE)
+    # Eyes (2×2 dots)
+    px(img, 5, 5, UI_MORALE)
+    px(img, 5, 6, UI_MORALE)
+    px(img, 10, 5, UI_MORALE)
+    px(img, 10, 6, UI_MORALE)
+    # Smile arc
+    for sx, sy in [(5, 10), (6, 11), (7, 12), (8, 12), (9, 11), (10, 10)]:
+        px(img, sx, sy, UI_MORALE)
+    return img
+
+
 def build_ui_icons() -> None:
-    W, H = 64, 16
+    W, H = 80, 16   # 5 icons of 16×16
     sheet = Image.new("RGBA", (W, H), T)
-    icons = [make_heart_icon(), make_hunger_icon(), make_warmth_icon(), make_rest_icon()]
+    icons = [
+        make_heart_icon(),
+        make_hunger_icon(),
+        make_warmth_icon(),
+        make_rest_icon(),
+        make_morale_icon(),
+    ]
     for i, icon in enumerate(icons):
         sheet.paste(icon, (i * 16, 0))
     path = os.path.join(OUT, "ui_icons.png")

@@ -1,11 +1,39 @@
-[gd_scene load_steps=2 format=3 uid="uid://hudscene001"]
+[gd_scene load_steps=6 format=3 uid="uid://hudscene001"]
 
 [ext_resource type="Script" uid="uid://scrhud00001" path="res://scripts/ui/hud.gd" id="1_hud"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui_icons.png" id="2_icons"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hunger"]
+atlas = ExtResource("2_icons")
+region = Rect2(16, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_warmth"]
+atlas = ExtResource("2_icons")
+region = Rect2(32, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rest"]
+atlas = ExtResource("2_icons")
+region = Rect2(48, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_morale"]
+atlas = ExtResource("2_icons")
+region = Rect2(64, 0, 16, 16)
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
 health_bar = NodePath("MarginContainer/VBoxContainer/HealthBar")
 health_label = NodePath("MarginContainer/VBoxContainer/HealthLabel")
+needs_panel = NodePath("NeedsPanel")
+hunger_bar = NodePath("NeedsPanel/MarginContainer/VBoxContainer/HungerBar")
+warmth_bar = NodePath("NeedsPanel/MarginContainer/VBoxContainer/WarmthBar")
+rest_bar = NodePath("NeedsPanel/MarginContainer/VBoxContainer/RestBar")
+morale_bar = NodePath("NeedsPanel/MarginContainer/VBoxContainer/MoraleBar")
+critical_icons = NodePath("CriticalIcons")
+hunger_critical_icon = NodePath("CriticalIcons/HungerCriticalIcon")
+warmth_critical_icon = NodePath("CriticalIcons/WarmthCriticalIcon")
+rest_critical_icon = NodePath("CriticalIcons/RestCriticalIcon")
+morale_critical_icon = NodePath("CriticalIcons/MoraleCriticalIcon")
+season_day_label = NodePath("SeasonDayLabel")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -32,3 +60,118 @@ custom_minimum_size = Vector2(196, 16)
 max_value = 100.0
 value = 100.0
 show_percentage = false
+
+[node name="NeedsPanel" type="Control" parent="."]
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -224
+offset_top = 12
+offset_right = -12
+offset_bottom = 116
+visible = false
+
+[node name="MarginContainer" type="MarginContainer" parent="NeedsPanel"]
+layout_mode = 1
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="NeedsPanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HungerBar" type="ProgressBar" parent="NeedsPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(188, 16)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="WarmthBar" type="ProgressBar" parent="NeedsPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(188, 16)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="RestBar" type="ProgressBar" parent="NeedsPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(188, 16)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="MoraleBar" type="ProgressBar" parent="NeedsPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(188, 16)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+
+[node name="CriticalIcons" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 12
+offset_top = 70
+offset_right = 152
+offset_bottom = 102
+theme_override_constants/separation = 4
+
+[node name="HungerCriticalIcon" type="TextureRect" parent="CriticalIcons"]
+layout_mode = 2
+custom_minimum_size = Vector2(32, 32)
+texture = SubResource("AtlasTexture_hunger")
+expand_mode = 1
+stretch_mode = 0
+texture_filter = 1
+visible = false
+
+[node name="WarmthCriticalIcon" type="TextureRect" parent="CriticalIcons"]
+layout_mode = 2
+custom_minimum_size = Vector2(32, 32)
+texture = SubResource("AtlasTexture_warmth")
+expand_mode = 1
+stretch_mode = 0
+texture_filter = 1
+visible = false
+
+[node name="RestCriticalIcon" type="TextureRect" parent="CriticalIcons"]
+layout_mode = 2
+custom_minimum_size = Vector2(32, 32)
+texture = SubResource("AtlasTexture_rest")
+expand_mode = 1
+stretch_mode = 0
+texture_filter = 1
+visible = false
+
+[node name="MoraleCriticalIcon" type="TextureRect" parent="CriticalIcons"]
+layout_mode = 2
+custom_minimum_size = Vector2(32, 32)
+texture = SubResource("AtlasTexture_morale")
+expand_mode = 1
+stretch_mode = 0
+texture_filter = 1
+visible = false
+
+[node name="SeasonDayLabel" type="Label" parent="."]
+layout_mode = 1
+anchor_left = 1.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_left = -252
+offset_top = 12
+offset_right = -12
+offset_bottom = 36
+horizontal_alignment = 2
+text = "Spring — Day 1"
+theme_override_font_sizes/font_size = 14
