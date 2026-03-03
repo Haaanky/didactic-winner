@@ -26,6 +26,21 @@ func after_each() -> void:
 		_overlay.queue_free()
 
 
+# ── First-frame protection ────────────────────────────────────────────────────
+
+func test_input_ignored_before_activation() -> void:
+	var overlay := CONTROLS_OVERLAY_SCENE.instantiate() as ControlsOverlay
+	add_child(overlay)
+	# No frame wait — _accepting_input is still false
+	watch_signals(overlay)
+	var event := InputEventMouseButton.new()
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.pressed = true
+	overlay._input(event)
+	assert_signal_not_emitted(overlay, "dismissed")
+	overlay.queue_free()
+
+
 # ── Visible on start ──────────────────────────────────────────────────────────
 
 func test_overlay_is_visible_on_start() -> void:
