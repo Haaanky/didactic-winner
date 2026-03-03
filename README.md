@@ -12,6 +12,8 @@ https://haaanky.github.io/didactic-winner/
 
 See [CLAUDE.md](./CLAUDE.md) for full project conventions, structure, and development guidelines.
 
+See [docs/CONTROLS.md](./docs/CONTROLS.md) for the full list of keyboard and gamepad bindings.
+
 ## License
 
 This project is licensed under the [GNU General Public License v3.0](./LICENSE).
