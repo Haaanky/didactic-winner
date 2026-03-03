@@ -72,7 +72,10 @@ func _update_visuals() -> void:
 	if flame_sprite != null:
 		flame_sprite.visible = is_lit
 		if is_lit:
-			flame_sprite.play(&"burning")
+			if fuel_logs >= 2:
+				flame_sprite.play(&"flickering")
+			else:
+				flame_sprite.play(&"embers")
 		else:
 			flame_sprite.stop()
 	if light_occluder != null:
@@ -86,6 +89,8 @@ func _on_hour_passed(_hour: int) -> void:
 	if fuel_logs <= 0:
 		fuel_logs = 0
 		_extinguish()
+		return
+	_update_visuals()
 
 
 func _on_body_entered(body: Node2D) -> void:

@@ -201,4 +201,55 @@ animations = [{
 "loop": true,
 "name": &"walk_side",
 "speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wdown0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wdown1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wdown2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wdown3")
+}],
+"loop": true,
+"name": &"run_down",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wup0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wup1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wup2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wup3")
+}],
+"loop": true,
+"name": &"run_up",
+"speed": 12.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wside0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wside1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wside2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wside3")
+}],
+"loop": true,
+"name": &"run_side",
+"speed": 12.0
 }]
