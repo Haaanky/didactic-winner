@@ -9,3 +9,5 @@ A 2D game built with [Godot 4](https://godotengine.org/).
 3. Press **F5** to run
 
 See [CLAUDE.md](./CLAUDE.md) for full project conventions, structure, and development guidelines.
+
+https://haaanky.github.io/didactic-winner/
