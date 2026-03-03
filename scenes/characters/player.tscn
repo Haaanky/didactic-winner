@@ -1,9 +1,10 @@
-[gd_scene load_steps=9 format=3 uid="uid://playerscene1"]
+[gd_scene load_steps=11 format=3 uid="uid://playerscene1"]
 
 [ext_resource type="Script" uid="uid://scrplayer001" path="res://scripts/player/player_controller.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/player/needs_component.gd" id="2_needs"]
 [ext_resource type="Script" path="res://scripts/player/inventory_component.gd" id="3_inv"]
 [ext_resource type="Script" path="res://scripts/player/skill_component.gd" id="4_skill"]
+[ext_resource type="SpriteFrames" path="res://resources/player_frames.tres" id="5_frames"]
 
 [sub_resource type="CapsuleShape2D" id="1_shape"]
 radius = 8.0
@@ -19,12 +20,14 @@ script = ExtResource("1_player")
 needs = NodePath("NeedsComponent")
 inventory = NodePath("InventoryComponent")
 skills = NodePath("SkillComponent")
-
-[node name="Visual" type="Polygon2D" parent="."]
-polygon = PackedVector2Array(-8, -12, 8, -12, 8, 12, -8, 12)
-color = Color(0.22, 0.47, 0.75, 1)
+sprite = NodePath("AnimatedSprite2D")
+footstep_player = NodePath("FootstepPlayer")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("5_frames")
+animation = &"idle_down"
+autoplay = "idle_down"
+position = Vector2(0, -4)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("1_shape")

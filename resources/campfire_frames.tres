@@ -1,0 +1,39 @@
+[gd_resource type="SpriteFrames" load_steps=5 format=3 uid="uid://cfframes01"]
+
+[ext_resource type="Texture2D" path="res://assets/sprites/campfire_sheet.png" id="1_sheet"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_burn0"]
+atlas = ExtResource("1_sheet")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_burn1"]
+atlas = ExtResource("1_sheet")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_burn2"]
+atlas = ExtResource("1_sheet")
+region = Rect2(64, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_burn3"]
+atlas = ExtResource("1_sheet")
+region = Rect2(96, 0, 32, 32)
+
+[resource]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_burn0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_burn1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_burn2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_burn3")
+}],
+"loop": true,
+"name": &"burning",
+"speed": 8.0
+}]

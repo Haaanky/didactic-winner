@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/campfire.gd" id="1_campfire"]
+[ext_resource type="SpriteFrames" path="res://resources/campfire_frames.tres" id="2_cfframes"]
 
 [sub_resource type="CircleShape2D" id="1_warmshape"]
 radius = 96.0
@@ -10,8 +11,13 @@ radius = 32.0
 
 [node name="Campfire" type="Node2D"]
 script = ExtResource("1_campfire")
+flame_sprite = NodePath("FlameSprite")
+warmth_area = NodePath("WarmthArea")
 
 [node name="FlameSprite" type="AnimatedSprite2D" parent="."]
+sprite_frames = ExtResource("2_cfframes")
+animation = &"burning"
+visible = false
 
 [node name="WarmthArea" type="Area2D" parent="."]
 collision_layer = 0
