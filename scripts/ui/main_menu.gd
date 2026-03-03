@@ -5,6 +5,8 @@ extends Control
 ## Touch is handled explicitly via _input() because Godot 4 web export does not
 ## reliably convert InputEventScreenTouch to mouse events through the GUI system.
 
+const _CLICK_SFX: AudioStream = preload("res://assets/audio/menu_click.wav")
+
 @onready var play_button: Button = $CenterContainer/VBoxContainer/PlayButton
 @onready var quit_button: Button = $CenterContainer/VBoxContainer/QuitButton
 
@@ -29,8 +31,10 @@ func _input(event: InputEvent) -> void:
 
 
 func _on_play_pressed() -> void:
+	AudioManager.play_sfx_global(_CLICK_SFX)
 	SceneManager.go_to_level_01()
 
 
 func _on_quit_pressed() -> void:
+	AudioManager.play_sfx_global(_CLICK_SFX)
 	get_tree().quit()
