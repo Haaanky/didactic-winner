@@ -8,6 +8,8 @@ signal health_changed(new_health: float)
 signal interacted_with(target: Node)
 signal player_died()
 
+const _FOOTSTEP_SNOW: AudioStream = preload("res://assets/audio/footstep_snow.wav")
+
 const MOVE_SPEED: float = 120.0
 const RUN_SPEED: float = 200.0
 const MAX_HEALTH: float = 100.0
@@ -39,6 +41,8 @@ var _footstep_timer: float = 0.0
 func _ready() -> void:
 	SaveManager.register_player(self)
 	GameManager.set_state(GameManager.GameState.PLAYING)
+	if footstep_player != null:
+		footstep_player.stream = _FOOTSTEP_SNOW
 
 
 func _physics_process(delta: float) -> void:

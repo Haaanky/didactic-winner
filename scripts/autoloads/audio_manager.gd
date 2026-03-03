@@ -7,13 +7,17 @@ const MUSIC_BUS: StringName = &"Music"
 const SFX_BUS: StringName = &"SFX"
 
 const SEASON_TRACKS: Dictionary = {
-	TimeManager.Season.SPRING: "res://assets/audio/spring_day.ogg",
-	TimeManager.Season.SUMMER: "res://assets/audio/summer_day.ogg",
-	TimeManager.Season.AUTUMN: "res://assets/audio/autumn_day.ogg",
-	TimeManager.Season.WINTER: "res://assets/audio/winter_outdoor.ogg",
+	TimeManager.Season.SPRING: "res://assets/audio/spring_day.wav",
+	TimeManager.Season.SUMMER: "res://assets/audio/summer_day.wav",
+	TimeManager.Season.AUTUMN: "res://assets/audio/autumn_day.wav",
+	TimeManager.Season.WINTER: "res://assets/audio/winter_outdoor.wav",
 }
-const INDOOR_TRACK: String = "res://assets/audio/cabin_interior.ogg"
-const BLIZZARD_TRACK: String = "res://assets/audio/blizzard.ogg"
+const INDOOR_TRACK: String = "res://assets/audio/cabin_interior.wav"
+const BLIZZARD_TRACK: String = "res://assets/audio/blizzard.wav"
+
+const SFX_MENU_CLICK: String = "res://assets/audio/menu_click.wav"
+const SFX_FOOTSTEP_SNOW: String = "res://assets/audio/footstep_snow.wav"
+const SFX_FOOTSTEP_GRASS: String = "res://assets/audio/footstep_grass.wav"
 
 const CROSSFADE_DURATION: float = 2.0
 
@@ -113,16 +117,18 @@ func _play_contextual_music() -> void:
 	_crossfade_to(stream)
 
 
+const _VOLUME_SILENT_DB: float = -80.0
+
 func _crossfade_to(stream: AudioStream) -> void:
 	if _crossfade_tween and _crossfade_tween.is_valid():
 		_crossfade_tween.kill()
 	_inactive_player.stream = stream
-	_inactive_player.volume_db = linear_to_db(0.0)
+	_inactive_player.volume_db = _VOLUME_SILENT_DB
 	_inactive_player.play()
 	_crossfade_tween = create_tween()
 	_crossfade_tween.set_parallel(true)
-	_crossfade_tween.tween_property(_active_player, "volume_db", linear_to_db(0.0), CROSSFADE_DURATION)
-	_crossfade_tween.tween_property(_inactive_player, "volume_db", linear_to_db(1.0), CROSSFADE_DURATION)
+	_crossfade_tween.tween_property(_active_player, "volume_db", _VOLUME_SILENT_DB, CROSSFADE_DURATION)
+	_crossfade_tween.tween_property(_inactive_player, "volume_db", 0.0, CROSSFADE_DURATION)
 	_crossfade_tween.set_parallel(false)
 	_crossfade_tween.tween_callback(_swap_players)
 
