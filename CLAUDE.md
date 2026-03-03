@@ -448,6 +448,22 @@ Fix enemy patrol path wrapping
 Add Alaska forest tileset
 ```
 
+### Pre-push Requirement — Tests Must Pass
+
+**Never commit or push code that has not been verified by a real GUT test run.**
+
+Before every push, run the full test suite headless and confirm 0 failing tests:
+
+```bash
+godot --headless --import
+godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit -ginclude_subdirs -gexit
+```
+
+- The first command imports the project and registers class names (required once per session).
+- The second command runs all tests. Exit code 0 = all passed; non-zero = at least one failure.
+- Do **not** push if any test is failing, even if it is unrelated to the current change.
+- If Godot is not installed, download it from https://godotengine.org/download before pushing.
+
 ---
 
 ## Development Workflow for AI Assistants
@@ -460,6 +476,7 @@ Add Alaska forest tileset
 6. **Keep scenes self-contained** — each scene should function independently where possible
 7. **No magic numbers** — use named constants or `@export` variables
 8. **Test in-engine** — Godot logic must be verified by running the editor; unit tests are written with **GUT 9.6.0** (see Testing section below)
+9. **Run tests before every push** — execute the full GUT suite headless and confirm 0 failures before committing or pushing; see [Pre-push Requirement](#pre-push-requirement--tests-must-pass)
 
 ---
 

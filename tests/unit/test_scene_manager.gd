@@ -51,12 +51,14 @@ func test_process_does_nothing_when_queue_is_empty() -> void:
 func test_process_clears_queue_for_nonexistent_scene() -> void:
 	_sm._queued_scene = "res://does_not_exist.tscn"
 	_sm._process(0.0)
+	assert_push_error_count(1)
 	assert_eq(_sm._queued_scene, "")
 
 
 func test_process_clears_queue_after_handling_invalid_path() -> void:
 	_sm.go_to_level("res://no_such_file.tscn")
 	_sm._process(0.0)
+	assert_push_error_count(1)
 	assert_eq(_sm._queued_scene, "")
 
 
