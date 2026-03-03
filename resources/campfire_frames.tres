@@ -36,4 +36,38 @@ animations = [{
 "loop": true,
 "name": &"burning",
 "speed": 8.0
+}, {
+"frames": [{
+"duration": 1.5,
+"texture": SubResource("AtlasTexture_burn0")
+}, {
+"duration": 0.3,
+"texture": SubResource("AtlasTexture_burn1")
+}, {
+"duration": 1.5,
+"texture": SubResource("AtlasTexture_burn2")
+}, {
+"duration": 0.3,
+"texture": SubResource("AtlasTexture_burn3")
+}],
+"loop": true,
+"name": &"embers",
+"speed": 3.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_burn0")
+}, {
+"duration": 0.4,
+"texture": SubResource("AtlasTexture_burn1")
+}, {
+"duration": 1.6,
+"texture": SubResource("AtlasTexture_burn2")
+}, {
+"duration": 0.4,
+"texture": SubResource("AtlasTexture_burn3")
+}],
+"loop": true,
+"name": &"flickering",
+"speed": 8.0
 }]

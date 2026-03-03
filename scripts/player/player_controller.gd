@@ -16,6 +16,8 @@ const STAMINA_MAX: float = 100.0
 const STAMINA_DRAIN_PER_SECOND: float = 20.0
 const STAMINA_REGEN_PER_SECOND: float = 10.0
 const ENCUMBRANCE_SPEED_PENALTY: float = 0.4
+const HURT_FLASH_DURATION: float = 0.15
+const DEATH_ANIM_DURATION: float = 0.8
 
 @export var sprint_multiplier: float = 1.6
 @export var needs: NeedsComponent
@@ -31,6 +33,7 @@ var _is_alive: bool = true
 var _is_running: bool = false
 var _last_direction: Vector2 = Vector2.DOWN
 var _footstep_timer: float = 0.0
+var _hurt_tween: Tween
 
 @onready var interact_ray: RayCast2D = $InteractRay
 @onready var camera: Camera2D = $Camera2D
@@ -70,6 +73,8 @@ func take_damage(amount: float) -> void:
 	EventBus.player_health_changed.emit(health)
 	if health <= 0.0:
 		_die()
+		return
+	_play_hurt_flash()
 
 
 func heal(amount: float) -> void:
@@ -109,6 +114,7 @@ func deserialise(data: Dictionary) -> void:
 
 func _handle_movement(delta: float) -> void:
 	var direction: Vector2 = Input.get_vector("move_left", "move_right", "move_up", "move_down")
+	_is_running = Input.is_action_pressed("sprint") and stamina > 0.0
 	if direction == Vector2.ZERO:
 		velocity = Vector2.ZERO
 		_play_idle_animation()
@@ -161,12 +167,12 @@ func _play_walk_animation(direction: Vector2) -> void:
 		return
 	var animation: StringName
 	if abs(direction.x) > abs(direction.y):
-		animation = &"walk_side"
+		animation = &"run_side" if _is_running else &"walk_side"
 		sprite.flip_h = direction.x < 0.0
 	elif direction.y < 0.0:
-		animation = &"walk_up"
+		animation = &"run_up" if _is_running else &"walk_up"
 	else:
-		animation = &"walk_down"
+		animation = &"run_down" if _is_running else &"walk_down"
 	if sprite.animation != animation:
 		sprite.play(animation)
 
@@ -192,7 +198,29 @@ func _play_footstep() -> void:
 	footstep_player.play()
 
 
+func _play_hurt_flash() -> void:
+	if sprite == null:
+		return
+	if is_instance_valid(_hurt_tween):
+		_hurt_tween.kill()
+	_hurt_tween = create_tween()
+	_hurt_tween.tween_property(sprite, "modulate", Color(1.0, 0.2, 0.2, 1.0), 0.0)
+	_hurt_tween.tween_property(sprite, "modulate", Color.WHITE, HURT_FLASH_DURATION)
+
+
+func _play_death_animation() -> void:
+	if sprite == null:
+		return
+	if is_instance_valid(_hurt_tween):
+		_hurt_tween.kill()
+	var tween: Tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(sprite, "modulate", Color(1.0, 0.0, 0.0, 0.0), DEATH_ANIM_DURATION)
+	tween.tween_property(sprite, "scale", Vector2.ZERO, DEATH_ANIM_DURATION)
+
+
 func _die() -> void:
 	_is_alive = false
+	_play_death_animation()
 	player_died.emit()
 	EventBus.player_died.emit()

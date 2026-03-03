@@ -135,3 +135,15 @@ func test_move_speed_is_positive() -> void:
 
 func test_interact_reach_is_positive() -> void:
 	assert_gt(PlayerController.INTERACT_REACH, 0.0)
+
+
+func test_hurt_flash_duration_is_positive() -> void:
+	assert_gt(PlayerController.HURT_FLASH_DURATION, 0.0)
+
+
+func test_death_anim_duration_is_positive() -> void:
+	assert_gt(PlayerController.DEATH_ANIM_DURATION, 0.0)
+
+
+func test_run_speed_exceeds_walk_speed() -> void:
+	assert_gt(PlayerController.RUN_SPEED, PlayerController.MOVE_SPEED)
