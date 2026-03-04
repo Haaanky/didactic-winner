@@ -5,7 +5,6 @@
 [node name="ControlsOverlay" type="CanvasLayer"]
 layer = 20
 script = ExtResource("1_script")
-controls_grid = NodePath("CenterContainer/PanelContainer/MarginContainer/VBoxContainer/ControlsGrid")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1

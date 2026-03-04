@@ -131,12 +131,15 @@ func _handle_movement(delta: float) -> void:
 
 
 func _handle_stamina(delta: float) -> void:
+	var old_stamina: float = stamina
 	if velocity != Vector2.ZERO and _is_running:
 		stamina = maxf(stamina - STAMINA_DRAIN_PER_SECOND * delta, 0.0)
 		if stamina <= 0.0:
 			_is_running = false
 	elif velocity == Vector2.ZERO:
 		stamina = minf(stamina + STAMINA_REGEN_PER_SECOND * delta, STAMINA_MAX)
+	if stamina != old_stamina:
+		EventBus.stamina_changed.emit(stamina)
 
 
 func _handle_footsteps(delta: float) -> void:

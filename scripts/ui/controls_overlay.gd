@@ -9,23 +9,20 @@ signal dismissed
 const _ROWS := [
 	["Action", "Keyboard", "Gamepad"],
 	["Move", "W A S D", "Left Stick"],
+	["Sprint", "Shift", "LB"],
 	["Interact", "E", "A (×)"],
+	["Eat Food", "F", "B (○)"],
 	["Check Needs", "T", "Y (△)"],
 	["Inventory", "I", "X (□)"],
-	["Journal", "J", "—"],
-	["Map", "M", "—"],
 	["Pause", "Esc", "Start"],
 ]
 
-@export var controls_grid: GridContainer
+@onready var controls_grid: GridContainer = $CenterContainer/PanelContainer/MarginContainer/VBoxContainer/ControlsGrid
 
 var _accepting_input: bool = false
 
 
 func _ready() -> void:
-	if controls_grid == null:
-		push_error("ControlsOverlay: controls_grid export not set")
-		return
 	_populate_grid()
 	await get_tree().process_frame
 	_accepting_input = true

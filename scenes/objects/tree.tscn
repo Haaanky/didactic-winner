@@ -24,12 +24,14 @@ texture = ExtResource("3_stump")
 visible = false
 
 [node name="Collision" type="StaticBody2D" parent="."]
+collision_layer = 2
+collision_mask = 0
 
 [node name="TrunkShape" type="CollisionShape2D" parent="Collision"]
 shape = SubResource("1_trunkshape")
 
 [node name="InteractArea" type="Area2D" parent="."]
-collision_layer = 4
+collision_layer = 2
 collision_mask = 0
 
 [node name="InteractShape" type="CollisionShape2D" parent="InteractArea"]

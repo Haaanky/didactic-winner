@@ -14,6 +14,7 @@ func before_each() -> void:
 
 func after_each() -> void:
 	_needs.queue_free()
+	await get_tree().process_frame
 
 
 # ── Initial state ─────────────────────────────────────────────────────────────
@@ -178,8 +179,10 @@ func test_health_does_not_drain_without_depleted_needs() -> void:
 # ── warmth multiplier ─────────────────────────────────────────────────────────
 
 func test_warmth_multiplier_scales_warmth_drain() -> void:
+	# Call directly to avoid WeatherManager receiving hour_passed and re-emitting
+	# temperature_changed (which would reset _warmth_multiplier before the drain).
 	_needs.set_warmth_multiplier(2.0)
-	EventBus.hour_passed.emit(9)
+	_needs._on_hour_passed(9)
 	var expected: float = NeedsComponent.NEED_MAX - NeedsComponent.BASE_DRAIN_PER_HOUR["warmth"] * 2.0
 	assert_eq(_needs.needs["warmth"], expected)
 

@@ -42,6 +42,7 @@ func _ready() -> void:
 	_inactive_player = _music_player_b
 	EventBus.season_changed.connect(_on_season_changed)
 	EventBus.weather_changed.connect(_on_weather_changed)
+	call_deferred("_play_contextual_music")
 
 
 func play_sfx(stream: AudioStream, position: Vector2 = Vector2.ZERO) -> void:

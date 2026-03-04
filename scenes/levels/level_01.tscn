@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://level01scene"]
+[gd_scene load_steps=13 format=3 uid="uid://level01scene"]
 
 [ext_resource type="Script" path="res://scripts/world/background.gd" id="5_bg"]
 [ext_resource type="Script" path="res://scripts/world/day_night_layer.gd" id="1_daynight"]
@@ -6,6 +6,9 @@
 [ext_resource type="PackedScene" uid="uid://hudscene001" path="res://scenes/ui/hud.tscn" id="3_hud"]
 [ext_resource type="PackedScene" uid="uid://touchctrl001" path="res://scenes/ui/touch_controller.tscn" id="4_touch"]
 [ext_resource type="PackedScene" uid="uid://ctrloverlay01" path="res://scenes/ui/controls_overlay.tscn" id="6_ctrloverlay"]
+[ext_resource type="PackedScene" path="res://scenes/objects/campfire.tscn" id="7_campfire"]
+[ext_resource type="PackedScene" path="res://scenes/objects/tree.tscn" id="8_tree"]
+[ext_resource type="PackedScene" uid="uid://pausemenu001" path="res://scenes/ui/pause_menu.tscn" id="9_pausemenu"]
 
 [node name="Level01" type="Node2D"]
 
@@ -24,7 +27,34 @@ collision_enabled = true
 
 [node name="Trees" type="Node2D" parent="World"]
 
+[node name="Tree1" parent="World/Trees" instance=ExtResource("8_tree")]
+position = Vector2(380, 200)
+
+[node name="Tree2" parent="World/Trees" instance=ExtResource("8_tree")]
+position = Vector2(820, 190)
+
+[node name="Tree3" parent="World/Trees" instance=ExtResource("8_tree")]
+position = Vector2(280, 420)
+
+[node name="Tree4" parent="World/Trees" instance=ExtResource("8_tree")]
+position = Vector2(940, 400)
+
+[node name="Tree5" parent="World/Trees" instance=ExtResource("8_tree")]
+position = Vector2(450, 540)
+
+[node name="Tree6" parent="World/Trees" instance=ExtResource("8_tree")]
+position = Vector2(870, 530)
+
+[node name="Tree7" parent="World/Trees" instance=ExtResource("8_tree")]
+position = Vector2(160, 280)
+
+[node name="Tree8" parent="World/Trees" instance=ExtResource("8_tree")]
+position = Vector2(1080, 300)
+
 [node name="Objects" type="Node2D" parent="World"]
+
+[node name="Campfire1" parent="World/Objects" instance=ExtResource("7_campfire")]
+position = Vector2(710, 380)
 
 [node name="DayNightLayer" type="CanvasModulate" parent="."]
 color = Color(1, 1, 1, 1)
@@ -34,6 +64,8 @@ script = ExtResource("1_daynight")
 position = Vector2(640, 360)
 
 [node name="HUD" parent="." instance=ExtResource("3_hud")]
+
+[node name="PauseMenu" parent="." instance=ExtResource("9_pausemenu")]
 
 [node name="TouchController" parent="." instance=ExtResource("4_touch")]
 

@@ -32,7 +32,7 @@ func _ready() -> void:
 func add_xp(skill: Skill, amount: float) -> void:
 	skill_xp[skill] += amount
 	EventBus.skill_xp_gained.emit(Skill.keys()[skill], amount)
-	if skill_xp[skill] >= XP_PER_LEVEL and skill_levels[skill] < MAX_LEVEL:
+	while skill_xp[skill] >= XP_PER_LEVEL and skill_levels[skill] < MAX_LEVEL:
 		skill_xp[skill] -= XP_PER_LEVEL
 		_level_up(skill)
 

@@ -1,10 +1,11 @@
-[gd_scene load_steps=11 format=3 uid="uid://playerscene1"]
+[gd_scene load_steps=12 format=3 uid="uid://playerscene1"]
 
 [ext_resource type="Script" uid="uid://scrplayer001" path="res://scripts/player/player_controller.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/player/needs_component.gd" id="2_needs"]
 [ext_resource type="Script" path="res://scripts/player/inventory_component.gd" id="3_inv"]
 [ext_resource type="Script" path="res://scripts/player/skill_component.gd" id="4_skill"]
 [ext_resource type="SpriteFrames" path="res://resources/player_frames.tres" id="5_frames"]
+[ext_resource type="Script" path="res://scripts/player/appearance_component.gd" id="6_appearance"]
 
 [sub_resource type="CapsuleShape2D" id="1_shape"]
 radius = 8.0
@@ -20,6 +21,7 @@ script = ExtResource("1_player")
 needs = NodePath("NeedsComponent")
 inventory = NodePath("InventoryComponent")
 skills = NodePath("SkillComponent")
+appearance = NodePath("AppearanceComponent")
 sprite = NodePath("AnimatedSprite2D")
 footstep_player = NodePath("FootstepPlayer")
 
@@ -41,6 +43,9 @@ script = ExtResource("3_inv")
 
 [node name="SkillComponent" type="Node" parent="."]
 script = ExtResource("4_skill")
+
+[node name="AppearanceComponent" type="Node" parent="."]
+script = ExtResource("6_appearance")
 
 [node name="InteractRay" type="RayCast2D" parent="."]
 enabled = true

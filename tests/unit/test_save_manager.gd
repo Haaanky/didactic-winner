@@ -24,23 +24,28 @@ func after_each() -> void:
 # ── slot validation ───────────────────────────────────────────────────────────
 
 func test_save_with_negative_slot_logs_error() -> void:
-	assert_error_emitted(func(): _sm.save(-1))
+	_sm.save(-1)
+	assert_push_error_count(1)
 
 
 func test_save_with_out_of_range_slot_logs_error() -> void:
-	assert_error_emitted(func(): _sm.save(_sm.MAX_SLOTS))
+	_sm.save(_sm.MAX_SLOTS)
+	assert_push_error_count(1)
 
 
 func test_load_slot_with_negative_slot_logs_error() -> void:
-	assert_error_emitted(func(): _sm.load_slot(-1))
+	_sm.load_slot(-1)
+	assert_push_error_count(1)
 
 
 func test_load_slot_with_out_of_range_slot_logs_error() -> void:
-	assert_error_emitted(func(): _sm.load_slot(_sm.MAX_SLOTS))
+	_sm.load_slot(_sm.MAX_SLOTS)
+	assert_push_error_count(1)
 
 
 func test_load_slot_with_invalid_slot_returns_false() -> void:
 	assert_false(_sm.load_slot(_sm.MAX_SLOTS))
+	assert_push_error_count(1)
 
 
 # ── slot_exists ───────────────────────────────────────────────────────────────
@@ -91,6 +96,8 @@ func test_load_slot_returns_false_on_corrupt_json() -> void:
 	file.store_string("not valid json {{{{")
 	file.close()
 	assert_false(_sm.load_slot(TEST_SLOT))
+	assert_push_error_count(1)
+	assert_engine_error_count(1)
 
 
 func test_load_slot_logs_error_on_corrupt_json() -> void:
@@ -98,7 +105,9 @@ func test_load_slot_logs_error_on_corrupt_json() -> void:
 	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
 	file.store_string("not valid json {{{{")
 	file.close()
-	assert_error_emitted(func(): _sm.load_slot(TEST_SLOT))
+	_sm.load_slot(TEST_SLOT)
+	assert_push_error_count(1)
+	assert_engine_error_count(1)
 
 
 # ── player registration ───────────────────────────────────────────────────────

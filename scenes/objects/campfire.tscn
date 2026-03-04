@@ -21,13 +21,13 @@ visible = false
 
 [node name="WarmthArea" type="Area2D" parent="."]
 collision_layer = 0
-collision_mask = 2
+collision_mask = 1
 
 [node name="WarmthShape" type="CollisionShape2D" parent="WarmthArea"]
 shape = SubResource("1_warmshape")
 
 [node name="InteractArea" type="Area2D" parent="."]
-collision_layer = 4
+collision_layer = 2
 collision_mask = 0
 
 [node name="InteractShape" type="CollisionShape2D" parent="InteractArea"]
