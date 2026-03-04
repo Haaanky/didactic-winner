@@ -11,6 +11,16 @@ signal player_died()
 const _FOOTSTEP_SNOW: AudioStream = preload("res://assets/audio/footstep_snow.wav")
 
 const MOVE_SPEED: float = 120.0
+const STARTING_ITEM_AXE: StringName = &"hand_axe"
+const STARTING_ITEM_FOOD: StringName = &"dried_meat"
+const STARTING_ITEM_LOG: StringName = &"log"
+const STARTING_AXE_WEIGHT: float = 1.5
+const STARTING_FOOD_WEIGHT: float = 0.2
+const STARTING_LOG_WEIGHT: float = 2.0
+const STARTING_AXE_COUNT: int = 1
+const STARTING_FOOD_COUNT: int = 15
+const STARTING_LOG_COUNT: int = 5
+const FOOD_HUNGER_RESTORE: float = 20.0
 const RUN_SPEED: float = 200.0
 const MAX_HEALTH: float = 100.0
 const INTERACT_REACH: float = 32.0
@@ -46,6 +56,10 @@ func _ready() -> void:
 	GameManager.set_state(GameManager.GameState.PLAYING)
 	if footstep_player != null:
 		footstep_player.stream = _FOOTSTEP_SNOW
+	if inventory != null and inventory.items.is_empty():
+		inventory.add_item(STARTING_ITEM_AXE, STARTING_AXE_COUNT, STARTING_AXE_WEIGHT)
+		inventory.add_item(STARTING_ITEM_FOOD, STARTING_FOOD_COUNT, STARTING_FOOD_WEIGHT)
+		inventory.add_item(STARTING_ITEM_LOG, STARTING_LOG_COUNT, STARTING_LOG_WEIGHT)
 
 
 func _physics_process(delta: float) -> void:
@@ -62,6 +76,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("interact"):
 		_try_interact()
+	elif event.is_action_pressed("consume"):
+		_try_consume()
 	elif event.is_action_pressed("check_needs"):
 		EventBus.ui_screen_opened.emit("needs_hud")
 	elif event.is_action_pressed("pause"):
@@ -131,12 +147,15 @@ func _handle_movement(delta: float) -> void:
 
 
 func _handle_stamina(delta: float) -> void:
+	var old_stamina: float = stamina
 	if velocity != Vector2.ZERO and _is_running:
 		stamina = maxf(stamina - STAMINA_DRAIN_PER_SECOND * delta, 0.0)
 		if stamina <= 0.0:
 			_is_running = false
 	elif velocity == Vector2.ZERO:
 		stamina = minf(stamina + STAMINA_REGEN_PER_SECOND * delta, STAMINA_MAX)
+	if stamina != old_stamina:
+		EventBus.stamina_changed.emit(stamina)
 
 
 func _handle_footsteps(delta: float) -> void:
@@ -158,12 +177,29 @@ func _calculate_speed() -> float:
 	return base * (1.0 - encumbrance_ratio * ENCUMBRANCE_SPEED_PENALTY)
 
 
+func _try_consume() -> void:
+	if inventory == null or needs == null:
+		return
+	if inventory.has_item(STARTING_ITEM_FOOD):
+		inventory.remove_item(STARTING_ITEM_FOOD, 1)
+		needs.restore_need("hunger", FOOD_HUNGER_RESTORE)
+		EventBus.journal_entry_added.emit("Ate some dried meat.")
+
+
 func _try_interact() -> void:
-	if interact_ray.is_colliding():
-		var target: Object = interact_ray.get_collider()
-		if target is Node:
-			interacted_with.emit(target as Node)
-			EventBus.interaction_triggered.emit(target as Node)
+	if not interact_ray.is_colliding():
+		return
+	var target: Object = interact_ray.get_collider()
+	if not (target is Node):
+		return
+	var target_node := target as Node
+	interacted_with.emit(target_node)
+	EventBus.interaction_triggered.emit(target_node)
+	var handler: Node = target_node
+	if not handler.has_method("interact"):
+		handler = target_node.get_parent()
+	if handler != null and handler.has_method("interact"):
+		handler.interact(self)
 
 
 func _play_walk_animation(direction: Vector2) -> void:

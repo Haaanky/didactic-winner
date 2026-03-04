@@ -29,12 +29,16 @@ func test_all_exported_nodes_are_wired() -> void:
 	assert_not_null(_hud.warmth_bar)
 	assert_not_null(_hud.rest_bar)
 	assert_not_null(_hud.morale_bar)
+	assert_not_null(_hud.stamina_bar)
 	assert_not_null(_hud.critical_icons)
 	assert_not_null(_hud.hunger_critical_icon)
 	assert_not_null(_hud.warmth_critical_icon)
 	assert_not_null(_hud.rest_critical_icon)
 	assert_not_null(_hud.morale_critical_icon)
 	assert_not_null(_hud.season_day_label)
+	assert_not_null(_hud.time_label)
+	assert_not_null(_hud.weather_label)
+	assert_not_null(_hud.journal_notification)
 
 
 # ── Initial state ─────────────────────────────────────────────────────────────
@@ -155,3 +159,53 @@ func test_needs_panel_not_shown_for_unrelated_screen() -> void:
 func test_hour_passed_updates_season_day_label() -> void:
 	EventBus.hour_passed.emit(1)
 	assert_false(_hud.season_day_label.text.is_empty())
+
+
+func test_hour_passed_updates_time_label() -> void:
+	EventBus.hour_passed.emit(8)
+	assert_false(_hud.time_label.text.is_empty())
+
+
+# ── Stamina bar ───────────────────────────────────────────────────────────────
+
+func test_stamina_bar_hidden_by_default() -> void:
+	assert_false(_hud.stamina_bar.visible)
+
+
+func test_stamina_changed_below_max_shows_bar() -> void:
+	EventBus.stamina_changed.emit(HUD.STAMINA_MAX - 10.0)
+	assert_true(_hud.stamina_bar.visible)
+
+
+func test_stamina_changed_at_max_hides_bar() -> void:
+	EventBus.stamina_changed.emit(HUD.STAMINA_MAX - 10.0)
+	EventBus.stamina_changed.emit(HUD.STAMINA_MAX)
+	assert_false(_hud.stamina_bar.visible)
+
+
+func test_stamina_changed_updates_bar_value() -> void:
+	EventBus.stamina_changed.emit(60.0)
+	assert_eq(_hud.stamina_bar.value, 60.0)
+
+
+# ── Journal notification ──────────────────────────────────────────────────────
+
+func test_journal_notification_hidden_by_default() -> void:
+	assert_false(_hud.journal_notification.visible)
+
+
+func test_journal_entry_added_shows_notification() -> void:
+	EventBus.journal_entry_added.emit("Found some wood.")
+	assert_true(_hud.journal_notification.visible)
+
+
+func test_journal_entry_added_sets_text() -> void:
+	EventBus.journal_entry_added.emit("Chopped a tree.")
+	assert_eq(_hud.journal_notification.text, "Chopped a tree.")
+
+
+func test_journal_notification_hides_after_duration() -> void:
+	EventBus.journal_entry_added.emit("Ate some food.")
+	for _i in range(200):
+		_hud._process(0.02)
+	assert_false(_hud.journal_notification.visible)

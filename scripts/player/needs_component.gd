@@ -2,13 +2,13 @@ class_name NeedsComponent
 extends Node
 
 ## Tracks the four survival needs: hunger, warmth, rest, morale.
-## Health only drains when a need is fully depleted.
+## When a need is fully depleted, health damage is delegated to the parent PlayerController.
 
 const BASE_DRAIN_PER_HOUR: Dictionary = {
 	"hunger": 4.0,
 	"warmth": 2.0,
-	"rest": 3.0,
-	"morale": 0.8,
+	"rest": 1.0,
+	"morale": 0.5,
 }
 
 const NEED_MAX: float = 100.0
@@ -21,14 +21,15 @@ var needs: Dictionary = {
 	"rest": NEED_MAX,
 	"morale": NEED_MAX,
 }
-var health: float = NEED_MAX
 
 var _warmth_multiplier: float = 1.0
 var _morale_modifiers: float = 0.0
 var _depleted_needs: Array[String] = []
+var _player_controller: PlayerController = null
 
 
 func _ready() -> void:
+	_player_controller = get_parent() as PlayerController
 	EventBus.hour_passed.connect(_on_hour_passed)
 	EventBus.temperature_changed.connect(_on_temperature_changed)
 
@@ -41,11 +42,6 @@ func restore_need(need: String, amount: float) -> void:
 	EventBus.need_changed.emit(need, needs[need])
 	if was_depleted and needs[need] > 0.0:
 		_depleted_needs.erase(need)
-
-
-func restore_health(amount: float) -> void:
-	health = minf(health + amount, NEED_MAX)
-	EventBus.health_changed.emit(health)
 
 
 func add_morale_modifier(amount: float) -> void:
@@ -63,7 +59,6 @@ func is_need_critical(need: String) -> bool:
 func serialise() -> Dictionary:
 	return {
 		"needs": needs.duplicate(),
-		"health": health,
 		"warmth_multiplier": _warmth_multiplier,
 	}
 
@@ -73,7 +68,6 @@ func deserialise(data: Dictionary) -> void:
 	for key: String in needs.keys():
 		if saved_needs.has(key):
 			needs[key] = saved_needs[key]
-	health = data.get("health", NEED_MAX)
 	_warmth_multiplier = data.get("warmth_multiplier", 1.0)
 
 
@@ -97,10 +91,9 @@ func _on_hour_passed(_hour: int) -> void:
 	_morale_modifiers = 0.0
 
 	if not _depleted_needs.is_empty():
-		health = maxf(health - HEALTH_DRAIN_PER_HOUR * _depleted_needs.size(), 0.0)
-		EventBus.health_changed.emit(health)
-		if health <= 0.0:
-			EventBus.player_died.emit()
+		var drain_amount: float = HEALTH_DRAIN_PER_HOUR * _depleted_needs.size()
+		if _player_controller != null and is_instance_valid(_player_controller):
+			_player_controller.take_damage(drain_amount)
 
 
 func _on_temperature_changed(temperature: float) -> void:

@@ -21,56 +21,51 @@ region = Rect2(64, 0, 16, 16)
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
-health_bar = NodePath("MarginContainer/VBoxContainer/HealthBar")
-health_label = NodePath("MarginContainer/VBoxContainer/HealthLabel")
-needs_panel = NodePath("NeedsPanel")
-hunger_bar = NodePath("NeedsPanel/MarginContainer/VBoxContainer/HungerBar")
-warmth_bar = NodePath("NeedsPanel/MarginContainer/VBoxContainer/WarmthBar")
-rest_bar = NodePath("NeedsPanel/MarginContainer/VBoxContainer/RestBar")
-morale_bar = NodePath("NeedsPanel/MarginContainer/VBoxContainer/MoraleBar")
-critical_icons = NodePath("CriticalIcons")
-hunger_critical_icon = NodePath("CriticalIcons/HungerCriticalIcon")
-warmth_critical_icon = NodePath("CriticalIcons/WarmthCriticalIcon")
-rest_critical_icon = NodePath("CriticalIcons/RestCriticalIcon")
-morale_critical_icon = NodePath("CriticalIcons/MoraleCriticalIcon")
-season_day_label = NodePath("SeasonDayLabel")
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
+[node name="HealthPanel" type="PanelContainer" parent="."]
 layout_mode = 1
 anchors_preset = 0
 offset_right = 220
-offset_bottom = 64
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
+offset_bottom = 80
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="HealthPanel"]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="HealthLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+[node name="HealthLabel" type="Label" parent="HealthPanel/VBoxContainer"]
 layout_mode = 2
 text = "Health: 100"
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 
-[node name="HealthBar" type="ProgressBar" parent="MarginContainer/VBoxContainer"]
+[node name="HealthBar" type="ProgressBar" parent="HealthPanel/VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(196, 16)
+custom_minimum_size = Vector2(196, 14)
 max_value = 100.0
 value = 100.0
 show_percentage = false
 
-[node name="NeedsPanel" type="Control" parent="."]
+[node name="StaminaBar" type="ProgressBar" parent="HealthPanel/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(196, 10)
+max_value = 100.0
+value = 100.0
+show_percentage = false
+visible = false
+
+[node name="NeedsPanel" type="PanelContainer" parent="."]
 layout_mode = 1
 anchor_left = 1.0
 anchor_top = 0.0
 anchor_right = 1.0
 anchor_bottom = 0.0
-offset_left = -224
-offset_top = 12
-offset_right = -12
-offset_bottom = 116
+offset_left = -240
+offset_top = 8
+offset_right = -8
+offset_bottom = 152
 visible = false
 
 [node name="MarginContainer" type="MarginContainer" parent="NeedsPanel"]
@@ -86,33 +81,92 @@ theme_override_constants/margin_bottom = 8
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="HungerBar" type="ProgressBar" parent="NeedsPanel/MarginContainer/VBoxContainer"]
+[node name="NeedsTitle" type="Label" parent="NeedsPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(188, 16)
+text = "Survival Needs"
+theme_override_font_sizes/font_size = 12
+modulate = Color(1, 1, 1, 0.7)
+
+[node name="HungerRow" type="HBoxContainer" parent="NeedsPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HungerLabel" type="Label" parent="NeedsPanel/MarginContainer/VBoxContainer/HungerRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(52, 0)
+text = "Hunger"
+theme_override_font_sizes/font_size = 12
+
+[node name="HungerBar" type="ProgressBar" parent="NeedsPanel/MarginContainer/VBoxContainer/HungerRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(128, 14)
 max_value = 100.0
 value = 100.0
 show_percentage = false
 
-[node name="WarmthBar" type="ProgressBar" parent="NeedsPanel/MarginContainer/VBoxContainer"]
+[node name="WarmthRow" type="HBoxContainer" parent="NeedsPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(188, 16)
+theme_override_constants/separation = 6
+
+[node name="WarmthLabel" type="Label" parent="NeedsPanel/MarginContainer/VBoxContainer/WarmthRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(52, 0)
+text = "Warmth"
+theme_override_font_sizes/font_size = 12
+
+[node name="WarmthBar" type="ProgressBar" parent="NeedsPanel/MarginContainer/VBoxContainer/WarmthRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(128, 14)
 max_value = 100.0
 value = 100.0
 show_percentage = false
 
-[node name="RestBar" type="ProgressBar" parent="NeedsPanel/MarginContainer/VBoxContainer"]
+[node name="RestRow" type="HBoxContainer" parent="NeedsPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(188, 16)
+theme_override_constants/separation = 6
+
+[node name="RestLabel" type="Label" parent="NeedsPanel/MarginContainer/VBoxContainer/RestRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(52, 0)
+text = "Rest"
+theme_override_font_sizes/font_size = 12
+
+[node name="RestBar" type="ProgressBar" parent="NeedsPanel/MarginContainer/VBoxContainer/RestRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(128, 14)
 max_value = 100.0
 value = 100.0
 show_percentage = false
 
-[node name="MoraleBar" type="ProgressBar" parent="NeedsPanel/MarginContainer/VBoxContainer"]
+[node name="MoraleRow" type="HBoxContainer" parent="NeedsPanel/MarginContainer/VBoxContainer"]
 layout_mode = 2
-custom_minimum_size = Vector2(188, 16)
+theme_override_constants/separation = 6
+
+[node name="MoraleLabel" type="Label" parent="NeedsPanel/MarginContainer/VBoxContainer/MoraleRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(52, 0)
+text = "Morale"
+theme_override_font_sizes/font_size = 12
+
+[node name="MoraleBar" type="ProgressBar" parent="NeedsPanel/MarginContainer/VBoxContainer/MoraleRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(128, 14)
 max_value = 100.0
 value = 100.0
 show_percentage = false
+
+[node name="HintRow" type="HBoxContainer" parent="NeedsPanel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HintLabel" type="Label" parent="NeedsPanel/MarginContainer/VBoxContainer/HintRow"]
+layout_mode = 2
+text = "[F] Eat food"
+theme_override_font_sizes/font_size = 11
+modulate = Color(1, 1, 1, 0.6)
 
 [node name="CriticalIcons" type="HBoxContainer" parent="."]
 layout_mode = 1
@@ -121,14 +175,14 @@ anchor_top = 0.0
 anchor_right = 0.0
 anchor_bottom = 0.0
 offset_left = 12
-offset_top = 70
+offset_top = 86
 offset_right = 152
-offset_bottom = 102
+offset_bottom = 118
 theme_override_constants/separation = 4
 
 [node name="HungerCriticalIcon" type="TextureRect" parent="CriticalIcons"]
 layout_mode = 2
-custom_minimum_size = Vector2(32, 32)
+custom_minimum_size = Vector2(28, 28)
 texture = SubResource("AtlasTexture_hunger")
 expand_mode = 1
 stretch_mode = 0
@@ -137,7 +191,7 @@ visible = false
 
 [node name="WarmthCriticalIcon" type="TextureRect" parent="CriticalIcons"]
 layout_mode = 2
-custom_minimum_size = Vector2(32, 32)
+custom_minimum_size = Vector2(28, 28)
 texture = SubResource("AtlasTexture_warmth")
 expand_mode = 1
 stretch_mode = 0
@@ -146,7 +200,7 @@ visible = false
 
 [node name="RestCriticalIcon" type="TextureRect" parent="CriticalIcons"]
 layout_mode = 2
-custom_minimum_size = Vector2(32, 32)
+custom_minimum_size = Vector2(28, 28)
 texture = SubResource("AtlasTexture_rest")
 expand_mode = 1
 stretch_mode = 0
@@ -155,23 +209,60 @@ visible = false
 
 [node name="MoraleCriticalIcon" type="TextureRect" parent="CriticalIcons"]
 layout_mode = 2
-custom_minimum_size = Vector2(32, 32)
+custom_minimum_size = Vector2(28, 28)
 texture = SubResource("AtlasTexture_morale")
 expand_mode = 1
 stretch_mode = 0
 texture_filter = 1
 visible = false
 
-[node name="SeasonDayLabel" type="Label" parent="."]
+[node name="InfoPanel" type="PanelContainer" parent="."]
 layout_mode = 1
 anchor_left = 1.0
 anchor_top = 0.0
 anchor_right = 1.0
 anchor_bottom = 0.0
-offset_left = -252
-offset_top = 12
-offset_right = -12
-offset_bottom = 36
-horizontal_alignment = 2
+offset_left = -240
+offset_top = 8
+offset_right = -8
+offset_bottom = 70
+
+[node name="VBoxContainer" type="VBoxContainer" parent="InfoPanel"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="SeasonDayLabel" type="Label" parent="InfoPanel/VBoxContainer"]
+layout_mode = 2
 text = "Spring — Day 1"
-theme_override_font_sizes/font_size = 14
+horizontal_alignment = 2
+theme_override_font_sizes/font_size = 13
+
+[node name="TimeLabel" type="Label" parent="InfoPanel/VBoxContainer"]
+layout_mode = 2
+text = "8:00 AM"
+horizontal_alignment = 2
+theme_override_font_sizes/font_size = 12
+modulate = Color(1, 1, 1, 0.85)
+
+[node name="WeatherLabel" type="Label" parent="InfoPanel/VBoxContainer"]
+layout_mode = 2
+text = "Clear, 8°C"
+horizontal_alignment = 2
+theme_override_font_sizes/font_size = 12
+modulate = Color(0.85, 0.95, 1, 0.9)
+
+[node name="JournalNotification" type="Label" parent="."]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -250
+offset_top = -56
+offset_right = 250
+offset_bottom = -28
+horizontal_alignment = 1
+text = ""
+theme_override_font_sizes/font_size = 13
+modulate = Color(1, 1, 0.8, 0.9)
+visible = false

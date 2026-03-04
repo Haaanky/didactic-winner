@@ -2,6 +2,8 @@ extends Node
 
 const MAIN_MENU_SCENE := "res://scenes/main.tscn"
 const LEVEL_01_SCENE := "res://scenes/levels/level_01.tscn"
+const GAME_OVER_SCENE := "res://scenes/ui/game_over.tscn"
+const WIN_SCENE := "res://scenes/ui/win_screen.tscn"
 
 var _queued_scene: String = ""
 
@@ -30,3 +32,13 @@ func go_to_level(scene_path: String) -> void:
 
 func go_to_level_01() -> void:
 	go_to_level(LEVEL_01_SCENE)
+
+
+func go_to_game_over() -> void:
+	GameManager.set_state(GameManager.GameState.GAME_OVER)
+	_queued_scene = GAME_OVER_SCENE
+
+
+func go_to_win_screen() -> void:
+	GameManager.set_state(GameManager.GameState.GAME_OVER)
+	_queued_scene = WIN_SCENE

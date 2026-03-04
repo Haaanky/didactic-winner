@@ -117,3 +117,23 @@ func test_key_release_does_not_dismiss() -> void:
 	event.keycode = KEY_SPACE
 	_overlay._input(event)
 	assert_signal_not_emitted(_overlay, "dismissed")
+
+
+# ── Grid content ──────────────────────────────────────────────────────────────
+
+func test_controls_grid_contains_sprint_label() -> void:
+	var found: bool = false
+	for child: Node in _overlay.controls_grid.get_children():
+		if child is Label and (child as Label).text == "Sprint":
+			found = true
+			break
+	assert_true(found, "Controls grid must contain a Sprint label")
+
+
+func test_controls_grid_contains_eat_food_label() -> void:
+	var found: bool = false
+	for child: Node in _overlay.controls_grid.get_children():
+		if child is Label and (child as Label).text == "Eat Food":
+			found = true
+			break
+	assert_true(found, "Controls grid must contain an Eat Food label")

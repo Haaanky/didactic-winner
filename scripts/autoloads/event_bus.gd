@@ -7,11 +7,13 @@ extends Node
 signal player_died()
 signal player_health_changed(new_health: float)
 signal player_respawned()
+signal stamina_changed(new_stamina: float)
 signal item_picked_up(item_id: String, quantity: int)
 signal item_dropped(item_id: String, quantity: int)
 
 # ── Game state ────────────────────────────────────────────────────────────────
 signal game_paused(is_paused: bool)
+signal game_won(days_survived: int)
 
 # ── Needs ─────────────────────────────────────────────────────────────────────
 signal need_changed(need: String, value: float)

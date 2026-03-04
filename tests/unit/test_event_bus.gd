@@ -92,3 +92,23 @@ func test_temperature_changed_carries_float() -> void:
 	watch_signals(EventBus)
 	EventBus.temperature_changed.emit(-12.5)
 	assert_signal_emitted_with_parameters(EventBus, "temperature_changed", [-12.5])
+
+
+func test_game_won_signal_exists() -> void:
+	assert_true(EventBus.has_signal("game_won"))
+
+
+func test_stamina_changed_signal_exists() -> void:
+	assert_true(EventBus.has_signal("stamina_changed"))
+
+
+func test_game_won_carries_days_int() -> void:
+	watch_signals(EventBus)
+	EventBus.game_won.emit(5)
+	assert_signal_emitted_with_parameters(EventBus, "game_won", [5])
+
+
+func test_stamina_changed_carries_float() -> void:
+	watch_signals(EventBus)
+	EventBus.stamina_changed.emit(75.0)
+	assert_signal_emitted_with_parameters(EventBus, "stamina_changed", [75.0])
