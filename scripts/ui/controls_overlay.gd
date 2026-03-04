@@ -19,12 +19,18 @@ const _ROWS := [
 
 @onready var controls_grid: GridContainer = $CenterContainer/PanelContainer/MarginContainer/VBoxContainer/ControlsGrid
 
+var _accepting_input: bool = false
+
 
 func _ready() -> void:
 	_populate_grid()
+	await get_tree().process_frame
+	_accepting_input = true
 
 
 func _input(event: InputEvent) -> void:
+	if not _accepting_input:
+		return
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.pressed:
