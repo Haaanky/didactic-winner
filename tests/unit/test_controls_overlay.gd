@@ -134,6 +134,39 @@ func test_key_release_does_not_dismiss() -> void:
 	assert_signal_not_emitted(_overlay, "dismissed")
 
 
+# ── Gamepad: any button press dismisses ──────────────────────────────────────
+
+func test_joypad_button_press_emits_dismissed() -> void:
+	watch_signals(_overlay)
+	var event := InputEventJoypadButton.new()
+	event.button_index = JOY_BUTTON_START
+	event.pressed = true
+	_overlay._input(event)
+	assert_signal_emitted(_overlay, "dismissed")
+
+
+func test_joypad_button_release_does_not_dismiss() -> void:
+	watch_signals(_overlay)
+	var event := InputEventJoypadButton.new()
+	event.button_index = JOY_BUTTON_START
+	event.pressed = false
+	_overlay._input(event)
+	assert_signal_not_emitted(_overlay, "dismissed")
+
+
+func test_joypad_button_before_activation_does_not_dismiss() -> void:
+	var overlay := CONTROLS_OVERLAY_SCENE.instantiate() as ControlsOverlay
+	add_child(overlay)
+	# No frame wait — _accepting_input is still false
+	watch_signals(overlay)
+	var event := InputEventJoypadButton.new()
+	event.button_index = JOY_BUTTON_START
+	event.pressed = true
+	overlay._input(event)
+	assert_signal_not_emitted(overlay, "dismissed")
+	overlay.queue_free()
+
+
 # ── Grid content ──────────────────────────────────────────────────────────────
 
 func test_controls_grid_contains_sprint_label() -> void:

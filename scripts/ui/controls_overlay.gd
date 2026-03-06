@@ -2,7 +2,10 @@ class_name ControlsOverlay
 extends CanvasLayer
 
 ## Shows a control-scheme reference overlay when a level starts.
-## Dismissed by any mouse click, key press, or touch tap.
+## Dismissed by any mouse click, key press, touch tap, or gamepad button.
+## Blocks all recognised input from reaching the game while visible — including
+## during the first frame before dismissal is armed — so that a held Escape key
+## cannot pause the game before the player has seen the overlay.
 
 signal dismissed
 
@@ -23,26 +26,37 @@ var _accepting_input: bool = false
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_populate_grid()
 	await get_tree().process_frame
 	_accepting_input = true
 
 
 func _input(event: InputEvent) -> void:
-	if not _accepting_input:
-		return
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.pressed:
-			_dismiss()
+			get_viewport().set_input_as_handled()
+			if _accepting_input:
+				_dismiss()
 	elif event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
 		if touch.pressed:
-			_dismiss()
+			get_viewport().set_input_as_handled()
+			if _accepting_input:
+				_dismiss()
 	elif event is InputEventKey:
 		var key := event as InputEventKey
 		if key.pressed and not key.echo:
-			_dismiss()
+			get_viewport().set_input_as_handled()
+			if _accepting_input:
+				_dismiss()
+	elif event is InputEventJoypadButton:
+		var btn := event as InputEventJoypadButton
+		if btn.pressed:
+			get_viewport().set_input_as_handled()
+			if _accepting_input:
+				_dismiss()
 
 
 func _populate_grid() -> void:
@@ -54,6 +68,5 @@ func _populate_grid() -> void:
 
 
 func _dismiss() -> void:
-	get_viewport().set_input_as_handled()
 	dismissed.emit()
 	queue_free()
