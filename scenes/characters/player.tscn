@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://playerscene1"]
+[gd_scene load_steps=13 format=3 uid="uid://playerscene1"]
 
 [ext_resource type="Script" uid="uid://scrplayer001" path="res://scripts/player/player_controller.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/player/needs_component.gd" id="2_needs"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/player/skill_component.gd" id="4_skill"]
 [ext_resource type="SpriteFrames" path="res://resources/player_frames.tres" id="5_frames"]
 [ext_resource type="Script" path="res://scripts/player/appearance_component.gd" id="6_appearance"]
+[ext_resource type="Script" path="res://scripts/world/environment_camera.gd" id="7_envcam"]
 
 [sub_resource type="CapsuleShape2D" id="1_shape"]
 radius = 8.0
@@ -65,3 +66,4 @@ bus = &"SFX"
 [node name="Camera2D" type="Camera2D" parent="."]
 position_smoothing_enabled = true
 position_smoothing_speed = 5.0
+script = ExtResource("7_envcam")
