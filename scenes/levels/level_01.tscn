@@ -1,20 +1,95 @@
-[gd_scene load_steps=13 format=3 uid="uid://level01scene"]
+[gd_scene load_steps=22 format=3 uid="uid://level01scene"]
 
-[ext_resource type="Script" path="res://scripts/world/background.gd" id="5_bg"]
-[ext_resource type="Script" path="res://scripts/world/day_night_layer.gd" id="1_daynight"]
-[ext_resource type="PackedScene" uid="uid://playerscene1" path="res://scenes/characters/player.tscn" id="2_player"]
-[ext_resource type="PackedScene" uid="uid://hudscene001" path="res://scenes/ui/hud.tscn" id="3_hud"]
-[ext_resource type="PackedScene" uid="uid://touchctrl001" path="res://scenes/ui/touch_controller.tscn" id="4_touch"]
+[ext_resource type="Script" path="res://scripts/world/background.gd" id="1_bg"]
+[ext_resource type="Script" path="res://scripts/world/day_night_layer.gd" id="2_daynight"]
+[ext_resource type="PackedScene" uid="uid://playerscene1" path="res://scenes/characters/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" uid="uid://hudscene001" path="res://scenes/ui/hud.tscn" id="4_hud"]
+[ext_resource type="PackedScene" uid="uid://touchctrl001" path="res://scenes/ui/touch_controller.tscn" id="5_touch"]
 [ext_resource type="PackedScene" uid="uid://ctrloverlay01" path="res://scenes/ui/controls_overlay.tscn" id="6_ctrloverlay"]
 [ext_resource type="PackedScene" path="res://scenes/objects/campfire.tscn" id="7_campfire"]
 [ext_resource type="PackedScene" path="res://scenes/objects/tree.tscn" id="8_tree"]
 [ext_resource type="PackedScene" uid="uid://pausemenu001" path="res://scenes/ui/pause_menu.tscn" id="9_pausemenu"]
+[ext_resource type="Script" path="res://scripts/world/environment_setup.gd" id="10_envsetup"]
+[ext_resource type="Script" path="res://scripts/world/environment_controller.gd" id="11_envctrl"]
 
 [node name="Level01" type="Node2D"]
 
+[node name="SkyBackdrop" type="CanvasLayer" parent="."]
+layer = -10
+follow_viewport_enabled = false
+
+[node name="SkyRect" type="ColorRect" parent="SkyBackdrop"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -640.0
+offset_top = -360.0
+offset_right = 640.0
+offset_bottom = 360.0
+size = Vector2(1280, 720)
+color = Color(0.16, 0.32, 0.58, 1)
+
+[node name="EnvironmentParallax" type="ParallaxBackground" parent="."]
+
+[node name="AuroraLayer" type="ParallaxLayer" parent="EnvironmentParallax"]
+motion_scale = Vector2(0.02, 0.01)
+motion_mirroring = Vector2(2048, 0)
+
+[node name="AuroraSprite" type="Sprite2D" parent="EnvironmentParallax/AuroraLayer"]
+position = Vector2(0, -340)
+modulate = Color(1, 1, 1, 0)
+
+[node name="CloudLayer" type="ParallaxLayer" parent="EnvironmentParallax"]
+motion_scale = Vector2(0.04, 0.01)
+motion_mirroring = Vector2(2048, 0)
+
+[node name="CloudSprite" type="Sprite2D" parent="EnvironmentParallax/CloudLayer"]
+position = Vector2(0, -280)
+modulate = Color(1, 1, 1, 0.75)
+
+[node name="MountainsFarLayer" type="ParallaxLayer" parent="EnvironmentParallax"]
+motion_scale = Vector2(0.06, 0.02)
+motion_mirroring = Vector2(4096, 0)
+
+[node name="MtFarSprite" type="Sprite2D" parent="EnvironmentParallax/MountainsFarLayer"]
+position = Vector2(0, -200)
+modulate = Color(1, 1, 1, 1)
+
+[node name="MountainsMidLayer" type="ParallaxLayer" parent="EnvironmentParallax"]
+motion_scale = Vector2(0.10, 0.04)
+motion_mirroring = Vector2(4096, 0)
+
+[node name="MtMidSprite" type="Sprite2D" parent="EnvironmentParallax/MountainsMidLayer"]
+position = Vector2(0, -130)
+modulate = Color(1, 1, 1, 1)
+
+[node name="GlacierLayer" type="ParallaxLayer" parent="EnvironmentParallax"]
+motion_scale = Vector2(0.15, 0.06)
+motion_mirroring = Vector2(2048, 0)
+
+[node name="GlacierSprite" type="Sprite2D" parent="EnvironmentParallax/GlacierLayer"]
+position = Vector2(400, -60)
+modulate = Color(1, 1, 1, 0.88)
+
+[node name="ForestFarLayer" type="ParallaxLayer" parent="EnvironmentParallax"]
+motion_scale = Vector2(0.22, 0.08)
+motion_mirroring = Vector2(4096, 0)
+
+[node name="ForestFarSprite" type="Sprite2D" parent="EnvironmentParallax/ForestFarLayer"]
+position = Vector2(0, -20)
+modulate = Color(1, 1, 1, 0.95)
+
+[node name="FogFarLayer" type="ParallaxLayer" parent="EnvironmentParallax"]
+motion_scale = Vector2(0.30, 0.10)
+motion_mirroring = Vector2(0, 0)
+
+[node name="FogFarRect" type="ColorRect" parent="EnvironmentParallax/FogFarLayer"]
+position = Vector2(-1280, -400)
+size = Vector2(2560, 600)
+color = Color(0.82, 0.88, 0.95, 0.18)
+
 [node name="WorldBackground" type="Node2D" parent="."]
 z_index = -1
-script = ExtResource("5_bg")
+script = ExtResource("1_bg")
 
 [node name="World" type="Node2D" parent="."]
 
@@ -24,6 +99,32 @@ collision_enabled = true
 [node name="DecoLayer" type="TileMapLayer" parent="World"]
 
 [node name="SnowLayer" type="TileMapLayer" parent="World"]
+
+[node name="SnowGroundSprite" type="Sprite2D" parent="World"]
+position = Vector2(0, 0)
+scale = Vector2(24, 24)
+modulate = Color(1, 1, 1, 0.55)
+z_index = -1
+
+[node name="WaterPlane" type="ColorRect" parent="World"]
+position = Vector2(-4096, 2800)
+size = Vector2(8192, 3500)
+color = Color(0.10, 0.28, 0.55, 1)
+z_index = -2
+
+[node name="IceShoreSprite" type="Sprite2D" parent="World"]
+position = Vector2(0, 2820)
+scale = Vector2(12, 3)
+modulate = Color(1, 1, 1, 0.90)
+z_index = -1
+
+[node name="CoastalRocksSprite" type="Sprite2D" parent="World"]
+position = Vector2(0, 2700)
+scale = Vector2(12, 4)
+z_index = -1
+
+[node name="SpruceForest" type="Node2D" parent="World"]
+z_index = 1
 
 [node name="Trees" type="Node2D" parent="World"]
 
@@ -56,17 +157,68 @@ position = Vector2(1080, 300)
 [node name="Campfire1" parent="World/Objects" instance=ExtResource("7_campfire")]
 position = Vector2(710, 380)
 
+[node name="FogNearLayer" type="CanvasLayer" parent="."]
+layer = 3
+follow_viewport_enabled = true
+follow_viewport_scale = 1.0
+
+[node name="FogNearRect" type="ColorRect" parent="FogNearLayer"]
+position = Vector2(-640, 200)
+size = Vector2(1280, 360)
+color = Color(0.84, 0.90, 0.96, 0.12)
+
+[node name="SnowParticleLayer" type="CanvasLayer" parent="."]
+layer = 5
+follow_viewport_enabled = false
+
+[node name="SnowParticles" type="GPUParticles2D" parent="SnowParticleLayer"]
+position = Vector2(640, -20)
+amount = 150
+lifetime = 9.0
+local_coords = false
+emitting = true
+
+[node name="MistParticles" type="GPUParticles2D" parent="SnowParticleLayer"]
+position = Vector2(640, 400)
+amount = 20
+lifetime = 14.0
+local_coords = false
+emitting = true
+
 [node name="DayNightLayer" type="CanvasModulate" parent="."]
 color = Color(1, 1, 1, 1)
-script = ExtResource("1_daynight")
+script = ExtResource("2_daynight")
 
-[node name="Player" parent="." instance=ExtResource("2_player")]
+[node name="EnvironmentController" type="Node2D" parent="."]
+script = ExtResource("11_envctrl")
+
+[node name="EnvironmentSetup" type="Node" parent="."]
+script = ExtResource("10_envsetup")
+sky_rect = NodePath("../SkyBackdrop/SkyRect")
+cloud_sprite = NodePath("../EnvironmentParallax/CloudLayer/CloudSprite")
+aurora_sprite = NodePath("../EnvironmentParallax/AuroraLayer/AuroraSprite")
+mountains_far = NodePath("../EnvironmentParallax/MountainsFarLayer/MtFarSprite")
+mountains_mid = NodePath("../EnvironmentParallax/MountainsMidLayer/MtMidSprite")
+glacier_sprite = NodePath("../EnvironmentParallax/GlacierLayer/GlacierSprite")
+forest_far = NodePath("../EnvironmentParallax/ForestFarLayer/ForestFarSprite")
+fog_far_rect = NodePath("../EnvironmentParallax/FogFarLayer/FogFarRect")
+fog_near_rect = NodePath("../FogNearLayer/FogNearRect")
+water_rect = NodePath("../World/WaterPlane")
+snow_ground_sprite = NodePath("../World/SnowGroundSprite")
+ice_shore_sprite = NodePath("../World/IceShoreSprite")
+rocks_sprite = NodePath("../World/CoastalRocksSprite")
+spruce_root = NodePath("../World/SpruceForest")
+snow_particles = NodePath("../SnowParticleLayer/SnowParticles")
+mist_particles = NodePath("../SnowParticleLayer/MistParticles")
+environment_ctrl = NodePath("../EnvironmentController")
+
+[node name="Player" parent="." instance=ExtResource("3_player")]
 position = Vector2(640, 360)
 
-[node name="HUD" parent="." instance=ExtResource("3_hud")]
+[node name="HUD" parent="." instance=ExtResource("4_hud")]
 
 [node name="PauseMenu" parent="." instance=ExtResource("9_pausemenu")]
 
-[node name="TouchController" parent="." instance=ExtResource("4_touch")]
+[node name="TouchController" parent="." instance=ExtResource("5_touch")]
 
 [node name="ControlsOverlay" parent="." instance=ExtResource("6_ctrloverlay")]
