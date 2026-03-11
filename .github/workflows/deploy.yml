@@ -1,17 +1,18 @@
 name: Export and Deploy to GitHub Pages
 
+# NOTE: After merging this workflow, change GitHub Pages source in repo settings:
+#   Settings → Pages → Source → "Deploy from a branch" → branch: gh-pages / root
+
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: pages-main
   cancel-in-progress: true
 
 env:
@@ -20,7 +21,7 @@ env:
 
 jobs:
   export:
-    name: Export Web
+    name: Export and Deploy
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -62,19 +63,12 @@ jobs:
             https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker/coi-serviceworker.js
           sed -i 's|</head>|<script src="coi-serviceworker.js"></script>\n</head>|' build/web/index.html
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to gh-pages branch (root)
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: build/web
-
-  deploy:
-    name: Deploy to GitHub Pages
-    needs: export
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: build/web
+          publish_branch: gh-pages
+          # keep_files preserves any preview/ subdirectories written by the preview workflow
+          keep_files: true
+          commit_message: "Deploy main build — ${{ github.sha }}"
