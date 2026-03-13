@@ -86,11 +86,9 @@ func test_regrows_when_timer_reaches_zero() -> void:
 
 func test_berry_count_is_within_expected_range() -> void:
 	TimeManager.current_season = TimeManager.Season.SPRING
-	var signal_count_received: int = 0
-	_bush.berries_harvested.connect(func(count: int) -> void:
-		assert_gte(count, BerryBush.BASE_YIELD_MIN)
-		assert_lte(count, BerryBush.BASE_YIELD_MAX + 3)
-		signal_count_received += 1
-	)
+	watch_signals(_bush)
 	_bush.interact(_player)
-	assert_eq(signal_count_received, 1)
+	assert_signal_emitted(_bush, "berries_harvested")
+	var args: Array = get_signal_parameters(_bush, "berries_harvested")
+	assert_gte(args[0], BerryBush.BASE_YIELD_MIN)
+	assert_lte(args[0], BerryBush.BASE_YIELD_MAX + 3)

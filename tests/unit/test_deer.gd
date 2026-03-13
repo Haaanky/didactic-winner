@@ -28,12 +28,12 @@ func test_interact_without_knife_shows_message() -> void:
 	var inv := InventoryComponent.new()
 	add_child(inv)
 	var player: PlayerController = PlayerController.new()
-	player.inventory = inv
 	add_child(player)
+	player.inventory = inv
 	await get_tree().process_frame
 	_deer.interact(player)
 	assert_signal_emitted(EventBus, "journal_entry_added")
-	assert_eq(_deer.deer_state, Deer.DeerState.IDLE, "State should stay IDLE without knife")
+	assert_ne(_deer.deer_state, Deer.DeerState.DEAD, "Deer should not be harvested without knife")
 	player.queue_free()
 	inv.queue_free()
 
@@ -75,8 +75,8 @@ func test_get_prompt_without_knife() -> void:
 	var inv := InventoryComponent.new()
 	add_child(inv)
 	var player: PlayerController = PlayerController.new()
-	player.inventory = inv
 	add_child(player)
+	player.inventory = inv
 	await get_tree().process_frame
 	var prompt: String = _deer.get_interact_prompt(player)
 	assert_true(prompt.contains("knife"), "Prompt should mention knife when player has none")

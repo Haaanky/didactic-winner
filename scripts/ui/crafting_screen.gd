@@ -26,17 +26,22 @@ func _ready() -> void:
 	EventBus.crafting_closed.connect(_close)
 
 
+func _input(event: InputEvent) -> void:
+	if not _is_open:
+		return
+	if event is InputEventScreenTouch:
+		var touch := event as InputEventScreenTouch
+		if touch.pressed and close_button.get_global_rect().has_point(touch.position):
+			get_viewport().set_input_as_handled()
+			_close()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not _is_open:
 		return
 	if event.is_action_pressed("open_inventory") or event.is_action_pressed("pause"):
 		_close()
 		get_viewport().set_input_as_handled()
-	if event is InputEventScreenTouch:
-		var touch := event as InputEventScreenTouch
-		if touch.pressed and close_button.get_global_rect().has_point(touch.position):
-			get_viewport().set_input_as_handled()
-			_close()
 
 
 func open(at_campfire: bool) -> void:

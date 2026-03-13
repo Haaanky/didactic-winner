@@ -40,11 +40,13 @@ var _prompt_timer: float = 0.0
 var _last_prompt: String = ""
 var _hurt_tween: Tween
 
-@onready var interact_ray: RayCast2D = $InteractRay
-@onready var camera: Camera2D = $Camera2D
+var interact_ray: RayCast2D
+var camera: Camera2D
 
 
 func _ready() -> void:
+	interact_ray = get_node_or_null("InteractRay") as RayCast2D
+	camera = get_node_or_null("Camera2D") as Camera2D
 	add_to_group("player")
 	SaveManager.register_player(self)
 	GameManager.set_state(GameManager.GameState.PLAYING)
@@ -148,7 +150,8 @@ func _handle_movement(_delta: float) -> void:
 		_play_idle_animation()
 		return
 	_last_direction = direction
-	interact_ray.target_position = direction.normalized() * INTERACT_REACH
+	if interact_ray != null:
+		interact_ray.target_position = direction.normalized() * INTERACT_REACH
 	var speed: float = _calculate_speed()
 	velocity = direction * speed
 	_play_walk_animation(direction)
@@ -178,6 +181,8 @@ func _handle_footsteps(delta: float) -> void:
 
 
 func _handle_interact_prompt(delta: float) -> void:
+	if interact_ray == null:
+		return
 	_prompt_timer += delta
 	if _prompt_timer < PROMPT_CHECK_INTERVAL:
 		return
@@ -205,7 +210,7 @@ func _calculate_speed() -> float:
 
 
 func _try_interact() -> void:
-	if not interact_ray.is_colliding():
+	if interact_ray == null or not interact_ray.is_colliding():
 		return
 	var target: Object = interact_ray.get_collider()
 	if not (target is Node):

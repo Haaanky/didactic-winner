@@ -47,10 +47,9 @@ func test_interact_empty_deposit_does_not_add_stones() -> void:
 
 
 func test_stones_mined_signal_emitted() -> void:
-	var signal_fired: bool = false
-	_deposit.stones_mined.connect(func(_c: int) -> void: signal_fired = true)
+	watch_signals(_deposit)
 	_deposit.interact(_player)
-	assert_true(signal_fired)
+	assert_signal_emitted(_deposit, "stones_mined")
 
 
 func test_replenish_after_hours() -> void:
@@ -73,8 +72,9 @@ func test_get_interact_prompt_shows_depleted_when_empty() -> void:
 
 
 func test_yield_is_within_expected_range() -> void:
-	var got_stones: int = 0
-	_deposit.stones_mined.connect(func(count: int) -> void: got_stones = count)
+	watch_signals(_deposit)
 	_deposit.interact(_player)
-	assert_gte(got_stones, RockDeposit.YIELD_MIN)
-	assert_lte(got_stones, RockDeposit.YIELD_MAX + 3)
+	assert_signal_emitted(_deposit, "stones_mined")
+	var args: Array = get_signal_parameters(_deposit, "stones_mined")
+	assert_gte(args[0], RockDeposit.YIELD_MIN)
+	assert_lte(args[0], RockDeposit.YIELD_MAX + 3)
