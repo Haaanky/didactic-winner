@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://level01scene"]
+[gd_scene load_steps=28 format=3 uid="uid://level01scene"]
 
 [ext_resource type="Script" path="res://scripts/world/background.gd" id="1_bg"]
 [ext_resource type="Script" path="res://scripts/world/day_night_layer.gd" id="2_daynight"]
@@ -11,6 +11,11 @@
 [ext_resource type="PackedScene" uid="uid://pausemenu001" path="res://scenes/ui/pause_menu.tscn" id="9_pausemenu"]
 [ext_resource type="Script" path="res://scripts/world/environment_setup.gd" id="10_envsetup"]
 [ext_resource type="Script" path="res://scripts/world/environment_controller.gd" id="11_envctrl"]
+[ext_resource type="PackedScene" uid="uid://berrybush001" path="res://scenes/objects/berry_bush.tscn" id="12_bush"]
+[ext_resource type="PackedScene" uid="uid://fishspot001" path="res://scenes/objects/fishing_spot.tscn" id="13_fish"]
+[ext_resource type="PackedScene" uid="uid://rockdep001" path="res://scenes/objects/rock_deposit.tscn" id="14_rock"]
+[ext_resource type="PackedScene" uid="uid://invscreen001" path="res://scenes/ui/inventory_screen.tscn" id="15_inv"]
+[ext_resource type="PackedScene" uid="uid://craftscreen01" path="res://scenes/ui/crafting_screen.tscn" id="16_craft"]
 
 [node name="Level01" type="Node2D"]
 
@@ -157,6 +162,24 @@ position = Vector2(1080, 300)
 [node name="Campfire1" parent="World/Objects" instance=ExtResource("7_campfire")]
 position = Vector2(710, 380)
 
+[node name="BerryBush1" parent="World/Objects" instance=ExtResource("12_bush")]
+position = Vector2(320, 300)
+
+[node name="BerryBush2" parent="World/Objects" instance=ExtResource("12_bush")]
+position = Vector2(750, 460)
+
+[node name="BerryBush3" parent="World/Objects" instance=ExtResource("12_bush")]
+position = Vector2(500, 200)
+
+[node name="FishingSpot1" parent="World/Objects" instance=ExtResource("13_fish")]
+position = Vector2(640, 580)
+
+[node name="RockDeposit1" parent="World/Objects" instance=ExtResource("14_rock")]
+position = Vector2(200, 350)
+
+[node name="RockDeposit2" parent="World/Objects" instance=ExtResource("14_rock")]
+position = Vector2(900, 450)
+
 [node name="FogNearLayer" type="CanvasLayer" parent="."]
 layer = 3
 follow_viewport_enabled = true
@@ -218,6 +241,12 @@ position = Vector2(640, 360)
 [node name="HUD" parent="." instance=ExtResource("4_hud")]
 
 [node name="PauseMenu" parent="." instance=ExtResource("9_pausemenu")]
+
+[node name="InventoryScreen" parent="." instance=ExtResource("15_inv")]
+player = NodePath("../Player")
+
+[node name="CraftingScreen" parent="." instance=ExtResource("16_craft")]
+player = NodePath("../Player")
 
 [node name="TouchController" parent="." instance=ExtResource("5_touch")]
 

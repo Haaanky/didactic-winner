@@ -1,0 +1,13 @@
+{
+  "name": "dudes-in-alaska-tests",
+  "version": "1.0.0",
+  "description": "Playwright end-to-end tests for Dudes in Alaska web build",
+  "scripts": {
+    "test": "playwright test",
+    "test:local": "GAME_URL=http://localhost:8080 playwright test",
+    "serve": "npx serve build/web -p 8080 --cors"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

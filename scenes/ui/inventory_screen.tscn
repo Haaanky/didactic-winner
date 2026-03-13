@@ -1,0 +1,80 @@
+[gd_scene load_steps=2 format=3 uid="uid://invscreen001"]
+
+[ext_resource type="Script" path="res://scripts/ui/inventory_screen.gd" id="1_inv"]
+
+[node name="InventoryScreen" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_inv")
+
+[node name="Background" type="Panel" parent="."]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280
+offset_top = -220
+offset_right = 280
+offset_bottom = 220
+
+[node name="MarginContainer" type="MarginContainer" parent="Background"]
+layout_mode = 1
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Background/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HeaderRow" type="HBoxContainer" parent="Background/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="Background/MarginContainer/VBoxContainer/HeaderRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Inventory"
+theme_override_font_sizes/font_size = 16
+
+[node name="CloseButton" type="Button" parent="Background/MarginContainer/VBoxContainer/HeaderRow"]
+layout_mode = 2
+text = "✕"
+theme_override_font_sizes/font_size = 14
+
+[node name="Separator" type="HSeparator" parent="Background/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Background/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 300)
+
+[node name="ItemList" type="VBoxContainer" parent="Background/MarginContainer/VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="HintLabel" type="Label" parent="Background/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "[F] eats best food  •  [I] closes inventory  •  [Craft] opens crafting"
+theme_override_font_sizes/font_size = 11
+modulate = Color(1, 1, 1, 0.6)
+autowrap_mode = 3
+
+[node name="FooterRow" type="HBoxContainer" parent="Background/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="WeightLabel" type="Label" parent="Background/MarginContainer/VBoxContainer/FooterRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Weight: 0.0 / 30 kg"
+theme_override_font_sizes/font_size = 12
+
+[node name="CraftButton" type="Button" parent="Background/MarginContainer/VBoxContainer/FooterRow"]
+layout_mode = 2
+text = "Craft"
+custom_minimum_size = Vector2(72, 0)
+theme_override_font_sizes/font_size = 13

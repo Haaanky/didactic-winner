@@ -52,6 +52,7 @@ script = ExtResource("6_appearance")
 enabled = true
 target_position = Vector2(0, 32)
 collision_mask = 2
+collide_with_areas = true
 
 [node name="HeatDetector" type="Area2D" parent="."]
 collision_layer = 0

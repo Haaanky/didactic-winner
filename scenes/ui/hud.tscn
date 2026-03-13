@@ -266,3 +266,19 @@ text = ""
 theme_override_font_sizes/font_size = 13
 modulate = Color(1, 1, 0.8, 0.9)
 visible = false
+
+[node name="InteractPromptLabel" type="Label" parent="."]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.75
+anchor_right = 0.5
+anchor_bottom = 0.75
+offset_left = -160
+offset_top = -16
+offset_right = 160
+offset_bottom = 8
+horizontal_alignment = 1
+text = ""
+theme_override_font_sizes/font_size = 14
+modulate = Color(1, 1, 0.85, 0.95)
+visible = false

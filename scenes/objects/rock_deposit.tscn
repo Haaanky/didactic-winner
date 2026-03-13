@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3 uid="uid://rockdep001"]
+
+[ext_resource type="Script" path="res://scripts/world/rock_deposit.gd" id="1_rock"]
+[ext_resource type="Texture2D" path="res://assets/sprites/stump.png" id="2_rocktex"]
+
+[sub_resource type="RectangleShape2D" id="1_interactshape"]
+size = Vector2(28, 20)
+
+[node name="RockDeposit" type="Node2D"]
+script = ExtResource("1_rock")
+rock_sprite = NodePath("RockSprite")
+
+[node name="RockSprite" type="Sprite2D" parent="."]
+texture = ExtResource("2_rocktex")
+scale = Vector2(1.2, 0.9)
+modulate = Color(0.65, 0.65, 0.7, 1)
+
+[node name="InteractBody" type="StaticBody2D" parent="."]
+collision_layer = 2
+collision_mask = 0
+
+[node name="InteractShape" type="CollisionShape2D" parent="InteractBody"]
+shape = SubResource("1_interactshape")

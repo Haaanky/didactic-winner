@@ -13,13 +13,14 @@ const _FOOTSTEP_SNOW: AudioStream = preload("res://assets/audio/footstep_snow.wa
 const MOVE_SPEED: float = 120.0
 const RUN_SPEED: float = 200.0
 const MAX_HEALTH: float = 100.0
-const INTERACT_REACH: float = 32.0
+const INTERACT_REACH: float = 40.0
 const STAMINA_MAX: float = 100.0
 const STAMINA_DRAIN_PER_SECOND: float = 20.0
 const STAMINA_REGEN_PER_SECOND: float = 10.0
 const ENCUMBRANCE_SPEED_PENALTY: float = 0.4
 const HURT_FLASH_DURATION: float = 0.15
 const DEATH_ANIM_DURATION: float = 0.8
+const PROMPT_CHECK_INTERVAL: float = 0.1
 
 @export var sprint_multiplier: float = 1.6
 @export var needs: NeedsComponent
@@ -35,6 +36,8 @@ var _is_alive: bool = true
 var _is_running: bool = false
 var _last_direction: Vector2 = Vector2.DOWN
 var _footstep_timer: float = 0.0
+var _prompt_timer: float = 0.0
+var _last_prompt: String = ""
 var _hurt_tween: Tween
 
 @onready var interact_ray: RayCast2D = $InteractRay
@@ -42,10 +45,12 @@ var _hurt_tween: Tween
 
 
 func _ready() -> void:
+	add_to_group("player")
 	SaveManager.register_player(self)
 	GameManager.set_state(GameManager.GameState.PLAYING)
 	if footstep_player != null:
 		footstep_player.stream = _FOOTSTEP_SNOW
+	_give_starting_items()
 
 
 func _physics_process(delta: float) -> void:
@@ -55,6 +60,7 @@ func _physics_process(delta: float) -> void:
 	_handle_stamina(delta)
 	move_and_slide()
 	_handle_footsteps(delta)
+	_handle_interact_prompt(delta)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -62,8 +68,14 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.is_action_pressed("interact"):
 		_try_interact()
+	elif event.is_action_pressed("consume"):
+		_try_consume()
+	elif event.is_action_pressed("open_inventory"):
+		EventBus.ui_screen_opened.emit("inventory")
 	elif event.is_action_pressed("check_needs"):
 		EventBus.ui_screen_opened.emit("needs_hud")
+	elif event.is_action_pressed("open_journal"):
+		EventBus.ui_screen_opened.emit("journal")
 	elif event.is_action_pressed("pause"):
 		var is_paused: bool = GameManager.current_state == GameManager.GameState.PAUSED
 		EventBus.game_paused.emit(not is_paused)
@@ -116,7 +128,19 @@ func deserialise(data: Dictionary) -> void:
 		appearance.deserialise(data.get("appearance", {}))
 
 
-func _handle_movement(delta: float) -> void:
+func _give_starting_items() -> void:
+	if inventory == null or not inventory.items.is_empty():
+		return
+	inventory.add_item("hand_axe", 1, ItemDatabase.get_weight("hand_axe"))
+	inventory.add_item("hunting_knife", 1, ItemDatabase.get_weight("hunting_knife"))
+	inventory.add_item("berries", 6, ItemDatabase.get_weight("berries"))
+	inventory.add_item("dried_fish", 3, ItemDatabase.get_weight("dried_fish"))
+	EventBus.journal_entry_added.emit(
+		"You wake in the Alaskan wilderness. Survive 3 days. Chop trees [E], build fires, eat [F]."
+	)
+
+
+func _handle_movement(_delta: float) -> void:
 	var direction: Vector2 = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	_is_running = Input.is_action_pressed("sprint") and stamina > 0.0
 	if direction == Vector2.ZERO:
@@ -153,6 +177,25 @@ func _handle_footsteps(delta: float) -> void:
 		_play_footstep()
 
 
+func _handle_interact_prompt(delta: float) -> void:
+	_prompt_timer += delta
+	if _prompt_timer < PROMPT_CHECK_INTERVAL:
+		return
+	_prompt_timer = 0.0
+	var prompt: String = ""
+	if interact_ray.is_colliding():
+		var target: Object = interact_ray.get_collider()
+		if target is Node:
+			var parent: Node = (target as Node).get_parent()
+			if is_instance_valid(parent) and parent.has_method("get_interact_prompt"):
+				prompt = parent.get_interact_prompt(self)
+			elif (target as Node).has_method("get_interact_prompt"):
+				prompt = (target as Node).get_interact_prompt(self)
+	if prompt != _last_prompt:
+		_last_prompt = prompt
+		EventBus.interact_prompt_changed.emit(prompt)
+
+
 func _calculate_speed() -> float:
 	var encumbrance_ratio: float = 0.0
 	if inventory != null:
@@ -162,11 +205,52 @@ func _calculate_speed() -> float:
 
 
 func _try_interact() -> void:
-	if interact_ray.is_colliding():
-		var target: Object = interact_ray.get_collider()
-		if target is Node:
-			interacted_with.emit(target as Node)
-			EventBus.interaction_triggered.emit(target as Node)
+	if not interact_ray.is_colliding():
+		return
+	var target: Object = interact_ray.get_collider()
+	if not (target is Node):
+		return
+	interacted_with.emit(target as Node)
+	EventBus.interaction_triggered.emit(target as Node)
+	var node: Node = target as Node
+	var parent: Node = node.get_parent()
+	if is_instance_valid(parent) and parent.has_method("interact"):
+		parent.interact(self)
+	elif node.has_method("interact"):
+		node.interact(self)
+
+
+func _try_consume() -> void:
+	if inventory == null or needs == null:
+		return
+	var best_id: String = _find_best_food()
+	if best_id.is_empty():
+		EventBus.journal_entry_added.emit("No food to eat. Gather berries or catch fish.")
+		return
+	var food_value: float = ItemDatabase.get_food_value(best_id)
+	var warmth_value: float = ItemDatabase.get_warmth_value(best_id)
+	inventory.remove_item(best_id, 1)
+	needs.restore_need("hunger", food_value)
+	if warmth_value > 0.0:
+		needs.restore_need("warmth", warmth_value)
+	var name_str: String = ItemDatabase.get_display_name(best_id)
+	EventBus.journal_entry_added.emit("Ate %s." % name_str)
+	EventBus.item_consumed.emit(best_id, food_value)
+
+
+func _find_best_food() -> String:
+	if inventory == null:
+		return ""
+	var best_id: String = ""
+	var best_value: float = 0.0
+	for item_id: String in inventory.items.keys():
+		if not ItemDatabase.is_food(item_id):
+			continue
+		var val: float = ItemDatabase.get_food_value(item_id)
+		if val > best_value:
+			best_value = val
+			best_id = item_id
+	return best_id
 
 
 func _play_walk_animation(direction: Vector2) -> void:

@@ -26,8 +26,17 @@ func interact(player: PlayerController) -> void:
 	if is_chopped:
 		return
 	if not player.inventory.has_item("hand_axe"):
+		EventBus.journal_entry_added.emit("Need a hand axe to chop trees. Craft one: 2 logs + 3 stones [I].")
 		return
 	_apply_chop(player)
+
+
+func get_interact_prompt(player: PlayerController) -> String:
+	if is_chopped:
+		return "Tree stump"
+	if player.inventory == null or not player.inventory.has_item("hand_axe"):
+		return "Tree (need hand axe)"
+	return "[E] Chop (%d chops left)" % chops_remaining
 
 
 func _apply_chop(player: PlayerController) -> void:

@@ -24,6 +24,7 @@ TimeManager="*res://scripts/autoloads/time_manager.gd"
 WeatherManager="*res://scripts/autoloads/weather_manager.gd"
 AudioManager="*res://scripts/autoloads/audio_manager.gd"
 SaveManager="*res://scripts/autoloads/save_manager.gd"
+ItemDatabase="*res://scripts/autoloads/item_database.gd"
 
 [display]
 

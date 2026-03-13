@@ -1,4 +1,4 @@
-name: Export and Deploy to GitHub Pages
+name: Export, Deploy and E2E Test
 
 on:
   push:
@@ -51,6 +51,12 @@ jobs:
       - name: Import assets
         run: godot --headless --import || true
 
+      - name: Run GUT unit tests
+        run: |
+          godot --headless --import || true
+          godot --headless -s addons/gut/gut_cmdln.gd \
+            -gdir=res://tests/unit -ginclude_subdirs -gexit
+
       - name: Export Web build
         run: |
           mkdir -vp build/web
@@ -74,7 +80,36 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  playwright:
+    name: Playwright E2E Tests
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        env:
+          GAME_URL: ${{ needs.deploy.outputs.page_url }}
+        run: npx playwright test --reporter=list
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
