@@ -105,3 +105,15 @@ func test_touch_on_menu_button_when_visible_queues_main_menu() -> void:
 	touch.position = _menu.menu_button.get_global_rect().get_center()
 	_menu._input(touch)
 	assert_eq(SceneManager._queued_scene, SceneManager.MAIN_MENU_SCENE)
+
+
+# ── Save button wired ─────────────────────────────────────────────────────────
+
+func test_save_button_is_wired() -> void:
+	assert_not_null(_menu.save_button)
+
+
+func test_save_button_emits_ui_screen_opened_save_load() -> void:
+	watch_signals(EventBus)
+	_menu.save_button.pressed.emit()
+	assert_signal_emitted_with_parameters(EventBus, "ui_screen_opened", ["save_load"])

@@ -1,0 +1,58 @@
+[gd_scene load_steps=2 format=3 uid="uid://savescr001"]
+
+[ext_resource type="Script" uid="uid://savegd001" path="res://scripts/ui/save_screen.gd" id="1_save"]
+
+[node name="SaveScreen" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_save")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -240
+offset_top = -190
+offset_right = 240
+offset_bottom = 190
+
+[node name="MarginContainer" type="MarginContainer" parent="Panel"]
+layout_mode = 1
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Save / Load Game"
+theme_override_font_sizes/font_size = 18
+
+[node name="HSeparator" type="HSeparator" parent="Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="SlotsContainer" type="VBoxContainer" parent="Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+
+[node name="Footer" type="HBoxContainer" parent="Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 2
+
+[node name="CloseButton" type="Button" parent="Panel/MarginContainer/VBoxContainer/Footer"]
+layout_mode = 2
+custom_minimum_size = Vector2(110, 36)
+text = "Close [Esc]"
+theme_override_font_sizes/font_size = 13

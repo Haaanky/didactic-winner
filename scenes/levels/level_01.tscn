@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3 uid="uid://level01scene"]
+[gd_scene load_steps=32 format=3 uid="uid://level01scene"]
 
 [ext_resource type="Script" path="res://scripts/world/background.gd" id="1_bg"]
 [ext_resource type="Script" path="res://scripts/world/day_night_layer.gd" id="2_daynight"]
@@ -16,6 +16,9 @@
 [ext_resource type="PackedScene" uid="uid://rockdep001" path="res://scenes/objects/rock_deposit.tscn" id="14_rock"]
 [ext_resource type="PackedScene" uid="uid://invscreen001" path="res://scenes/ui/inventory_screen.tscn" id="15_inv"]
 [ext_resource type="PackedScene" uid="uid://craftscreen01" path="res://scenes/ui/crafting_screen.tscn" id="16_craft"]
+[ext_resource type="PackedScene" uid="uid://jrnlscr001" path="res://scenes/ui/journal_screen.tscn" id="17_journal"]
+[ext_resource type="PackedScene" uid="uid://savescr001" path="res://scenes/ui/save_screen.tscn" id="18_save"]
+[ext_resource type="PackedScene" uid="uid://deer001" path="res://scenes/objects/deer.tscn" id="19_deer"]
 
 [node name="Level01" type="Node2D"]
 
@@ -180,6 +183,15 @@ position = Vector2(200, 350)
 [node name="RockDeposit2" parent="World/Objects" instance=ExtResource("14_rock")]
 position = Vector2(900, 450)
 
+[node name="Deer1" parent="World/Objects" instance=ExtResource("19_deer")]
+position = Vector2(480, 280)
+
+[node name="Deer2" parent="World/Objects" instance=ExtResource("19_deer")]
+position = Vector2(830, 320)
+
+[node name="Deer3" parent="World/Objects" instance=ExtResource("19_deer")]
+position = Vector2(250, 480)
+
 [node name="FogNearLayer" type="CanvasLayer" parent="."]
 layer = 3
 follow_viewport_enabled = true
@@ -247,6 +259,10 @@ player = NodePath("../Player")
 
 [node name="CraftingScreen" parent="." instance=ExtResource("16_craft")]
 player = NodePath("../Player")
+
+[node name="JournalScreen" parent="." instance=ExtResource("17_journal")]
+
+[node name="SaveScreen" parent="." instance=ExtResource("18_save")]
 
 [node name="TouchController" parent="." instance=ExtResource("5_touch")]
 
