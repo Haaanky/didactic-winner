@@ -11,8 +11,8 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: pages-preview-${{ github.ref_name }}
-  cancel-in-progress: true
+  group: gh-pages-deploy
+  cancel-in-progress: false
 
 env:
   GODOT_VERSION: "4.4"
@@ -65,7 +65,7 @@ jobs:
       - name: Add Cross-Origin Isolation service worker
         run: |
           curl -fsSL -o build/web/coi-serviceworker.js \
-            https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker/coi-serviceworker.js
+            https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker@v0.1.7/coi-serviceworker.js
           sed -i 's|</head>|<script src="coi-serviceworker.js"></script>\n</head>|' build/web/index.html
 
       - name: Deploy preview to gh-pages/preview/<slug>
@@ -101,12 +101,15 @@ jobs:
           PREVIEW_URL="https://${OWNER}.github.io/${REPO}/preview/${SLUG}/"
 
           MARKER="<!-- preview-bot -->"
-          BODY="${MARKER}
-          **Preview deployed** for commit \`${SHA:0:7}\`
+          BODY="$(cat <<HEREDOC
+${MARKER}
+**Preview deployed** for commit \`${SHA:0:7}\`
 
-          Play it here: ${PREVIEW_URL}
+Play it here: ${PREVIEW_URL}
 
-          *Updates automatically on every push. Deleted when this PR closes.*"
+*Updates automatically on every push. Deleted when this PR closes.*
+HEREDOC
+)"
 
           EXISTING=$(gh api \
             "repos/${OWNER}/${REPO}/issues/${PR_NUMBER}/comments" \
