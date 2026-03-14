@@ -12,6 +12,9 @@ const { defineConfig, devices } = require('@playwright/test');
 
 const GAME_URL = (process.env.GAME_URL || 'https://haaanky.github.io/didactic-winner').replace(/\/$/, '') + '/';
 
+const isLocalURL = GAME_URL.startsWith('http://localhost') || GAME_URL.startsWith('http://127.');
+const PROXY_SERVER = !isLocalURL ? (process.env.https_proxy || process.env.HTTPS_PROXY || '') : '';
+
 module.exports = defineConfig({
   testDir: './tests/playwright',
   // Generous timeout: Godot WASM binary can be several MB to download + JIT
@@ -25,6 +28,7 @@ module.exports = defineConfig({
     viewport: { width: 1280, height: 720 },
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+    ...(PROXY_SERVER ? { proxy: { server: PROXY_SERVER } } : {}),
   },
   projects: [
     {
