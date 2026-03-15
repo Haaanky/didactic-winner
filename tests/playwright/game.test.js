@@ -237,6 +237,111 @@ test.describe('In-game input', () => {
   });
 });
 
+// ─── Journal, Map, Sprint ─────────────────────────────────────────────────────
+
+test.describe('Journal, map and sprint', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGame(page);
+    await page.waitForTimeout(6_000);
+    await page.mouse.click(640, 330);
+    await page.waitForTimeout(1_000);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(2_000);
+  });
+
+  test('journal key [J] opens and closes journal without crash', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    const before = await page.screenshot();
+    await page.keyboard.press('j');
+    await page.waitForTimeout(600);
+    const afterOpen = await page.screenshot();
+    await page.keyboard.press('j');
+    await page.waitForTimeout(400);
+    const afterClose = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    const diffOpen = screenshotDiffFraction(before, afterOpen);
+    expect(diffOpen, 'Opening journal should change canvas').toBeGreaterThan(0.005);
+    const diffClose = screenshotDiffFraction(afterOpen, afterClose);
+    expect(diffClose, 'Closing journal should change canvas').toBeGreaterThan(0.005);
+  });
+
+  test('map key [M] does not crash game', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    await page.keyboard.press('m');
+    await page.waitForTimeout(600);
+    await page.keyboard.press('m');
+    await page.waitForTimeout(400);
+    expect(getFatal()).toHaveLength(0);
+  });
+
+  test('sprint [Shift] while moving does not crash game', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    const before = await page.screenshot();
+    await page.keyboard.down('Shift');
+    await page.keyboard.down('d');
+    await page.waitForTimeout(600);
+    await page.keyboard.up('d');
+    await page.keyboard.up('Shift');
+    await page.waitForTimeout(200);
+    const after = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    const diff = screenshotDiffFraction(before, after);
+    expect(diff, 'Sprint+move should change canvas').toBeGreaterThan(0.001);
+  });
+
+  test('interact key [E] does not crash game', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    await page.keyboard.press('e');
+    await page.waitForTimeout(500);
+    expect(getFatal()).toHaveLength(0);
+  });
+});
+
+// ─── Pause cycle ──────────────────────────────────────────────────────────────
+
+test.describe('Pause cycle', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGame(page);
+    await page.waitForTimeout(6_000);
+    await page.mouse.click(640, 330);
+    await page.waitForTimeout(1_000);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(2_000);
+  });
+
+  test('pause then resume restores canvas to playing state', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    const beforePause = await page.screenshot();
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(800);
+    const paused = await page.screenshot();
+    // Press Escape again to resume (toggle)
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(800);
+    const afterResume = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    // Pause should visually differ from playing
+    const pauseDiff = screenshotDiffFraction(beforePause, paused);
+    expect(pauseDiff, 'Pause should change canvas').toBeGreaterThan(0.005);
+    // Resuming should restore closer to original than paused state
+    const resumeVsPausedDiff = screenshotDiffFraction(paused, afterResume);
+    expect(resumeVsPausedDiff, 'Resume should change canvas back').toBeGreaterThan(0.005);
+  });
+
+  test('pause menu → main menu navigates back without crash', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(1_000);
+    // Click the "Main Menu" / "Menu" button — positioned in the pause overlay centre
+    // Pause menu buttons are stacked vertically; Menu button is the bottom-most one
+    await page.mouse.click(640, 430);
+    await page.waitForTimeout(4_000);
+    expect(getFatal()).toHaveLength(0);
+    // After returning to main menu the page title should still be intact
+    await expect(page).toHaveTitle(/Dudes in Alaska/i);
+  });
+});
+
 // ─── Mobile touch ─────────────────────────────────────────────────────────────
 
 test.describe('Mobile touch', () => {

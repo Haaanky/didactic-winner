@@ -15,12 +15,24 @@ const GAME_URL = (process.env.GAME_URL || 'https://haaanky.github.io/didactic-wi
 const isLocalURL = GAME_URL.startsWith('http://localhost') || GAME_URL.startsWith('http://127.');
 const PROXY_SERVER = !isLocalURL ? (process.env.https_proxy || process.env.HTTPS_PROXY || '') : '';
 
+// When targeting localhost, spin up the static file server automatically so
+// tests don't need a separately-running process.
+const webServer = isLocalURL
+  ? {
+      command: 'npx serve build/web -p 8080 --cors',
+      url: 'http://localhost:8080',
+      reuseExistingServer: true,
+      timeout: 30_000,
+    }
+  : undefined;
+
 module.exports = defineConfig({
   testDir: './tests/playwright',
   // Generous timeout: Godot WASM binary can be several MB to download + JIT
   timeout: 120_000,
   retries: 1,
   reporter: [['list'], ['html', { open: 'never' }]],
+  ...(webServer ? { webServer } : {}),
   use: {
     // Absolute URL so page.goto(GAME_URL) works unambiguously
     baseURL: GAME_URL,
