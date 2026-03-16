@@ -101,15 +101,8 @@ jobs:
           PREVIEW_URL="https://${OWNER}.github.io/${REPO}/preview/${SLUG}/"
 
           MARKER="<!-- preview-bot -->"
-          BODY="$(cat <<HEREDOC
-${MARKER}
-**Preview deployed** for commit \`${SHA:0:7}\`
-
-Play it here: ${PREVIEW_URL}
-
-*Updates automatically on every push. Deleted when this PR closes.*
-HEREDOC
-)"
+          BODY=$(printf '%s\n**Preview deployed** for commit `%s`\n\nPlay it here: %s\n\n*Updates automatically on every push. Deleted when this PR closes.*' \
+            "${MARKER}" "${SHA:0:7}" "${PREVIEW_URL}")
 
           EXISTING=$(gh api \
             "repos/${OWNER}/${REPO}/issues/${PR_NUMBER}/comments" \
