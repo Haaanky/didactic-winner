@@ -65,7 +65,7 @@ jobs:
       - name: Add Cross-Origin Isolation service worker
         run: |
           curl -fsSL -o build/web/coi-serviceworker.js \
-            https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker@v0.1.7/coi-serviceworker.js
+            https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker@master/coi-serviceworker.js
           sed -i 's|</head>|<script src="coi-serviceworker.js"></script>\n</head>|' build/web/index.html
 
       - name: Deploy preview to gh-pages/preview/<slug>
