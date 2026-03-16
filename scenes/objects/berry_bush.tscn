@@ -1,0 +1,26 @@
+[gd_scene load_steps=5 format=3 uid="uid://berrybush001"]
+
+[ext_resource type="Script" path="res://scripts/world/berry_bush.gd" id="1_bush"]
+[ext_resource type="Texture2D" path="res://assets/sprites/tree.png" id="2_bushtex"]
+
+[sub_resource type="CircleShape2D" id="1_interactshape"]
+radius = 20.0
+
+[sub_resource type="RectangleShape2D" id="2_bodyshape"]
+size = Vector2(28, 20)
+
+[node name="BerryBush" type="Node2D"]
+script = ExtResource("1_bush")
+bush_sprite = NodePath("BushSprite")
+
+[node name="BushSprite" type="Sprite2D" parent="."]
+texture = ExtResource("2_bushtex")
+scale = Vector2(0.55, 0.55)
+modulate = Color(0.4, 0.8, 0.35, 1)
+
+[node name="InteractBody" type="StaticBody2D" parent="."]
+collision_layer = 2
+collision_mask = 0
+
+[node name="InteractShape" type="CollisionShape2D" parent="InteractBody"]
+shape = SubResource("1_interactshape")

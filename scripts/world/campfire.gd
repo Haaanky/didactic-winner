@@ -3,6 +3,7 @@ extends Node2D
 
 ## Placeable campfire. Emits warmth in an area.
 ## Must be fuelled with logs to remain lit.
+## When lit, player can interact to open the campfire crafting/cooking screen.
 
 signal lit()
 signal extinguished()
@@ -32,7 +33,15 @@ func interact(player: PlayerController) -> void:
 	if not is_lit:
 		_try_light(player)
 	else:
-		_try_add_fuel(player)
+		_handle_lit_interaction(player)
+
+
+func get_interact_prompt(player: PlayerController) -> String:
+	if not is_lit:
+		if player.inventory != null and player.inventory.has_item(LOG_ITEM_ID, 2):
+			return "[E] Light Campfire (needs 2 logs)"
+		return "Campfire (need 2 logs to light)"
+	return "[E] Cook / Add Fuel"
 
 
 func add_fuel(logs: int) -> void:
@@ -43,6 +52,7 @@ func _try_light(player: PlayerController) -> void:
 	if player.inventory == null:
 		return
 	if not player.inventory.has_item(LOG_ITEM_ID, 2):
+		EventBus.journal_entry_added.emit("Need at least 2 logs to start a fire. Chop a tree [E].")
 		return
 	player.inventory.remove_item(LOG_ITEM_ID, 2)
 	fuel_logs += 2
@@ -50,15 +60,15 @@ func _try_light(player: PlayerController) -> void:
 	_update_visuals()
 	lit.emit()
 	EventBus.campfire_lit.emit(self)
+	EventBus.journal_entry_added.emit("Campfire lit! Stay warm. Cook food here with [E].")
 
 
-func _try_add_fuel(player: PlayerController) -> void:
-	if player.inventory == null:
-		return
-	if not player.inventory.has_item(LOG_ITEM_ID):
-		return
-	player.inventory.remove_item(LOG_ITEM_ID, 1)
-	fuel_logs += 1
+func _handle_lit_interaction(player: PlayerController) -> void:
+	if player.inventory != null and player.inventory.has_item(LOG_ITEM_ID):
+		player.inventory.remove_item(LOG_ITEM_ID, 1)
+		fuel_logs += 1
+		EventBus.journal_entry_added.emit("Added a log to the fire (fuel: %d hrs)." % fuel_logs)
+	EventBus.crafting_opened.emit(true)
 
 
 func _extinguish() -> void:

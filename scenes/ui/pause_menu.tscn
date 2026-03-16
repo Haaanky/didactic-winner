@@ -35,6 +35,12 @@ custom_minimum_size = Vector2(260, 50)
 text = "Resume"
 theme_override_font_sizes/font_size = 18
 
+[node name="SaveButton" type="Button" parent="Background/CenterContainer/VBoxContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(260, 50)
+text = "Save / Load"
+theme_override_font_sizes/font_size = 18
+
 [node name="MenuButton" type="Button" parent="Background/CenterContainer/VBoxContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(260, 50)

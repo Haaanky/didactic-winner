@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://bicycle001"]
+
+[ext_resource type="Script" uid="uid://scrbicycle1" path="res://scripts/world/bicycle.gd" id="1_bicycle"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_1"]
+radius = 10.0
+height = 22.0
+
+[node name="Bicycle" type="StaticBody2D"]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_bicycle")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_1")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0.3, 0.5, 0.9, 1)

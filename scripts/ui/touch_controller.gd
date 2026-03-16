@@ -22,9 +22,7 @@ var _joystick_origin: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	layer = TOUCH_LAYER
-	if not DisplayServer.is_touchscreen_available():
-		hide()
-		return
+	hide()
 	joystick_base.hide()
 	interact_button.button_down.connect(_on_interact_down)
 	interact_button.button_up.connect(_on_interact_up)
@@ -35,11 +33,13 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if not visible:
-		return
 	if event is InputEventScreenTouch:
+		if not visible:
+			show()
 		_handle_screen_touch(event as InputEventScreenTouch)
 	elif event is InputEventScreenDrag:
+		if not visible:
+			return
 		_handle_screen_drag(event as InputEventScreenDrag)
 
 

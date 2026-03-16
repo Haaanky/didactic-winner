@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://level01scene"]
+[gd_scene load_steps=38 format=3 uid="uid://level01scene"]
 
 [ext_resource type="Script" path="res://scripts/world/background.gd" id="1_bg"]
 [ext_resource type="Script" path="res://scripts/world/day_night_layer.gd" id="2_daynight"]
@@ -11,6 +11,20 @@
 [ext_resource type="PackedScene" uid="uid://pausemenu001" path="res://scenes/ui/pause_menu.tscn" id="9_pausemenu"]
 [ext_resource type="Script" path="res://scripts/world/environment_setup.gd" id="10_envsetup"]
 [ext_resource type="Script" path="res://scripts/world/environment_controller.gd" id="11_envctrl"]
+[ext_resource type="PackedScene" uid="uid://berrybush001" path="res://scenes/objects/berry_bush.tscn" id="12_bush"]
+[ext_resource type="PackedScene" uid="uid://fishspot001" path="res://scenes/objects/fishing_spot.tscn" id="13_fish"]
+[ext_resource type="PackedScene" uid="uid://rockdep001" path="res://scenes/objects/rock_deposit.tscn" id="14_rock"]
+[ext_resource type="PackedScene" uid="uid://invscreen001" path="res://scenes/ui/inventory_screen.tscn" id="15_inv"]
+[ext_resource type="PackedScene" uid="uid://craftscreen01" path="res://scenes/ui/crafting_screen.tscn" id="16_craft"]
+[ext_resource type="PackedScene" uid="uid://jrnlscr001" path="res://scenes/ui/journal_screen.tscn" id="17_journal"]
+[ext_resource type="PackedScene" uid="uid://savescr001" path="res://scenes/ui/save_screen.tscn" id="18_save"]
+[ext_resource type="PackedScene" uid="uid://deer001" path="res://scenes/objects/deer.tscn" id="19_deer"]
+[ext_resource type="PackedScene" uid="uid://npc001" path="res://scenes/characters/npc.tscn" id="20_npc"]
+[ext_resource type="PackedScene" uid="uid://dog001" path="res://scenes/characters/dog.tscn" id="21_dog"]
+[ext_resource type="PackedScene" uid="uid://bicycle001" path="res://scenes/objects/bicycle.tscn" id="22_bicycle"]
+[ext_resource type="PackedScene" uid="uid://buildmenu001" path="res://scenes/ui/build_menu.tscn" id="23_buildmenu"]
+[ext_resource type="PackedScene" uid="uid://dialoguescr001" path="res://scenes/ui/dialogue_screen.tscn" id="24_dialogue"]
+[ext_resource type="Script" uid="uid://scrbuildmode1" path="res://scripts/player/build_mode.gd" id="25_buildmode"]
 
 [node name="Level01" type="Node2D"]
 
@@ -157,6 +171,33 @@ position = Vector2(1080, 300)
 [node name="Campfire1" parent="World/Objects" instance=ExtResource("7_campfire")]
 position = Vector2(710, 380)
 
+[node name="BerryBush1" parent="World/Objects" instance=ExtResource("12_bush")]
+position = Vector2(320, 300)
+
+[node name="BerryBush2" parent="World/Objects" instance=ExtResource("12_bush")]
+position = Vector2(750, 460)
+
+[node name="BerryBush3" parent="World/Objects" instance=ExtResource("12_bush")]
+position = Vector2(500, 200)
+
+[node name="FishingSpot1" parent="World/Objects" instance=ExtResource("13_fish")]
+position = Vector2(640, 580)
+
+[node name="RockDeposit1" parent="World/Objects" instance=ExtResource("14_rock")]
+position = Vector2(200, 350)
+
+[node name="RockDeposit2" parent="World/Objects" instance=ExtResource("14_rock")]
+position = Vector2(900, 450)
+
+[node name="Deer1" parent="World/Objects" instance=ExtResource("19_deer")]
+position = Vector2(480, 280)
+
+[node name="Deer2" parent="World/Objects" instance=ExtResource("19_deer")]
+position = Vector2(830, 320)
+
+[node name="Deer3" parent="World/Objects" instance=ExtResource("19_deer")]
+position = Vector2(250, 480)
+
 [node name="FogNearLayer" type="CanvasLayer" parent="."]
 layer = 3
 follow_viewport_enabled = true
@@ -219,6 +260,34 @@ position = Vector2(640, 360)
 
 [node name="PauseMenu" parent="." instance=ExtResource("9_pausemenu")]
 
+[node name="InventoryScreen" parent="." instance=ExtResource("15_inv")]
+player = NodePath("../Player")
+
+[node name="CraftingScreen" parent="." instance=ExtResource("16_craft")]
+player = NodePath("../Player")
+
+[node name="JournalScreen" parent="." instance=ExtResource("17_journal")]
+
+[node name="SaveScreen" parent="." instance=ExtResource("18_save")]
+
 [node name="TouchController" parent="." instance=ExtResource("5_touch")]
 
 [node name="ControlsOverlay" parent="." instance=ExtResource("6_ctrloverlay")]
+
+[node name="NPC1" parent="World/Objects" instance=ExtResource("20_npc")]
+position = Vector2(200, 250)
+npc_name = "Old Trapper"
+
+[node name="Dog1" parent="World/Objects" instance=ExtResource("21_dog")]
+position = Vector2(500, 450)
+dog_name = "Kodiak"
+
+[node name="Bicycle1" parent="World/Objects" instance=ExtResource("22_bicycle")]
+position = Vector2(780, 300)
+
+[node name="BuildMenu" parent="." instance=ExtResource("23_buildmenu")]
+
+[node name="DialogueScreen" parent="." instance=ExtResource("24_dialogue")]
+
+[node name="BuildMode" type="Node" parent="."]
+script = ExtResource("25_buildmode")

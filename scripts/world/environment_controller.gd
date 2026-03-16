@@ -206,7 +206,7 @@ func _set_snow_emission(amount: int) -> void:
 	snow_particles.emitting = amount > 0
 
 
-func _set_wind(speed: float) -> None:
+func _set_wind(speed: float) -> void:
 	if not is_instance_valid(snow_particles):
 		return
 	# Adjust gravity/direction on snow particle process material

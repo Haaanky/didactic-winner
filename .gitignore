@@ -8,3 +8,9 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Node / Playwright
+node_modules/
+playwright-report/
+test-results/
+playwright-results.json

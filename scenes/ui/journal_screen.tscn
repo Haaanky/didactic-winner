@@ -1,0 +1,69 @@
+[gd_scene load_steps=2 format=3 uid="uid://jrnlscr001"]
+
+[ext_resource type="Script" uid="uid://jrnlgd001" path="res://scripts/ui/journal_screen.gd" id="1_journal"]
+
+[node name="JournalScreen" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_journal")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280
+offset_top = -240
+offset_right = 280
+offset_bottom = 240
+
+[node name="MarginContainer" type="MarginContainer" parent="Panel"]
+layout_mode = 1
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="HBoxContainer" parent="Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Journal"
+theme_override_font_sizes/font_size = 18
+
+[node name="CountLabel" type="Label" parent="Panel/MarginContainer/VBoxContainer/Header"]
+layout_mode = 2
+text = "0 entries"
+theme_override_font_sizes/font_size = 12
+modulate = Color(1, 1, 1, 0.6)
+
+[node name="HSeparator" type="HSeparator" parent="Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 330)
+
+[node name="EntriesList" type="VBoxContainer" parent="Panel/MarginContainer/VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Footer" type="HBoxContainer" parent="Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 2
+
+[node name="CloseButton" type="Button" parent="Panel/MarginContainer/VBoxContainer/Footer"]
+layout_mode = 2
+custom_minimum_size = Vector2(110, 36)
+text = "Close [J/Esc]"
+theme_override_font_sizes/font_size = 13

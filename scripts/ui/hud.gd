@@ -29,6 +29,7 @@ const JOURNAL_DISPLAY_DURATION: float = 3.5
 @onready var time_label: Label = $InfoPanel/VBoxContainer/TimeLabel
 @onready var weather_label: Label = $InfoPanel/VBoxContainer/WeatherLabel
 @onready var journal_notification: Label = $JournalNotification
+@onready var interact_prompt_label: Label = $InteractPromptLabel
 
 var _hide_timer: float = 0.0
 var _showing_needs: bool = false
@@ -46,12 +47,15 @@ func _ready() -> void:
 	EventBus.temperature_changed.connect(_on_temperature_changed)
 	EventBus.ui_screen_opened.connect(_on_ui_screen_opened)
 	EventBus.journal_entry_added.connect(_on_journal_entry_added)
+	EventBus.interact_prompt_changed.connect(_on_interact_prompt_changed)
 	if needs_panel != null:
 		needs_panel.hide()
 	if journal_notification != null:
 		journal_notification.hide()
 	if stamina_bar != null:
 		stamina_bar.hide()
+	if interact_prompt_label != null:
+		interact_prompt_label.hide()
 	_refresh_health(HEALTH_MAX)
 	_refresh_time(TimeManager.game_hour)
 	_refresh_weather_display()
@@ -191,3 +195,13 @@ func _on_journal_entry_added(entry: String) -> void:
 	_journal_queue.append(entry)
 	if _journal_timer <= 0.0:
 		_show_next_journal_entry()
+
+
+func _on_interact_prompt_changed(prompt: String) -> void:
+	if interact_prompt_label == null:
+		return
+	if prompt.is_empty():
+		interact_prompt_label.hide()
+	else:
+		interact_prompt_label.text = prompt
+		interact_prompt_label.show()
