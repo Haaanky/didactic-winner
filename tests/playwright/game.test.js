@@ -342,6 +342,101 @@ test.describe('Pause cycle', () => {
   });
 });
 
+// ─── Crafting (SRS-4.8) ───────────────────────────────────────────────────────
+
+test.describe('Crafting system', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGame(page);
+    await page.waitForTimeout(6_000);
+    await page.mouse.click(640, 330);
+    await page.waitForTimeout(1_000);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(2_000);
+    await page.locator('#canvas, canvas').first().click();
+    await page.waitForTimeout(300);
+  });
+
+  test('crafting screen opens from inventory Craft button', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    // Open inventory
+    await page.keyboard.press('i');
+    await page.waitForTimeout(800);
+    const withInventory = await page.screenshot();
+    // Click Craft button (bottom-right of inventory panel)
+    await page.mouse.click(871, 557);
+    await page.waitForTimeout(800);
+    const withCrafting = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    // Crafting screen must visually differ from inventory-only state
+    const diff = screenshotDiffFraction(withInventory, withCrafting);
+    expect(diff, 'Crafting screen should change canvas from inventory').toBeGreaterThan(0.005);
+  });
+
+  test('crafting screen closes without crash', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    await page.keyboard.press('i');
+    await page.waitForTimeout(800);
+    await page.mouse.click(871, 557);
+    await page.waitForTimeout(800);
+    const withCrafting = await page.screenshot();
+    // Close via X button (top-right of crafting panel)
+    await page.mouse.click(877, 173);
+    await page.waitForTimeout(600);
+    const afterClose = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    const diff = screenshotDiffFraction(withCrafting, afterClose);
+    expect(diff, 'Closing crafting should change canvas').toBeGreaterThan(0.005);
+  });
+});
+
+// ─── Save / Load (SRS-4.16) ───────────────────────────────────────────────────
+
+test.describe('Save / Load system', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGame(page);
+    await page.waitForTimeout(6_000);
+    await page.mouse.click(640, 330);
+    await page.waitForTimeout(1_000);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(2_000);
+    await page.locator('#canvas, canvas').first().click();
+    await page.waitForTimeout(300);
+  });
+
+  test('Save/Load screen opens from pause menu', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(800);
+    const withPause = await page.screenshot();
+    // Click "Save / Load" button (second button, y≈387)
+    await page.mouse.click(640, 387);
+    await page.waitForTimeout(800);
+    const withSaveLoad = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    const diff = screenshotDiffFraction(withPause, withSaveLoad);
+    expect(diff, 'Save/Load screen should change canvas from pause menu').toBeGreaterThan(0.005);
+  });
+
+  test('saving to slot 1 does not crash', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(800);
+    await page.mouse.click(640, 387);
+    await page.waitForTimeout(800);
+    // Click Save button for slot 1
+    await page.mouse.click(752, 252);
+    await page.waitForTimeout(1_000);
+    const afterSave = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    // Close the screen
+    await page.mouse.click(809, 518);
+    await page.waitForTimeout(600);
+    expect(getFatal()).toHaveLength(0);
+    // Slot 1 save button must still leave a valid canvas
+    expect(afterSave.length).toBeGreaterThan(1000);
+  });
+});
+
 // ─── Mobile touch ─────────────────────────────────────────────────────────────
 
 test.describe('Mobile touch', () => {

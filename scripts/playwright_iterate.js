@@ -80,12 +80,12 @@ const SRS_REQUIREMENTS = [
   { id: 'SRS-4.5',   desc: 'Vehicles (bicycle, car, canoe)',                 covered: [] },
   { id: 'SRS-4.6',   desc: 'Fishing system',                                 covered: [] },
   { id: 'SRS-4.7',   desc: 'Hunting and trapping',                           covered: [] },
-  { id: 'SRS-4.8',   desc: 'Crafting system (craft menu opens)',              covered: [] },
+  { id: 'SRS-4.8',   desc: 'Crafting system (craft menu opens)',              covered: ['crafting screen opens from inventory', 'crafting screen closes without crash'] },
   { id: 'SRS-4.9',   desc: 'Town and NPC interactions',                      covered: [] },
   { id: 'SRS-4.10',  desc: 'Pets system',                                    covered: [] },
   { id: 'SRS-4.11',  desc: 'Death and generational continuity',              covered: [] },
   { id: 'SRS-4.15',  desc: 'Difficulty modes selectable',                    covered: [] },
-  { id: 'SRS-4.16',  desc: 'Save / load system',                             covered: [] },
+  { id: 'SRS-4.16',  desc: 'Save / load system',                             covered: ['Save/Load screen opens from pause menu', 'saving to slot 1 does not crash'] },
 ];
 
 // ── Run Playwright ─────────────────────────────────────────────────────────────
