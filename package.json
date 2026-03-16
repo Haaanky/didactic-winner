@@ -5,6 +5,8 @@
   "scripts": {
     "test": "playwright test",
     "test:local": "GAME_URL=http://localhost:8080 playwright test",
+    "iterate": "GAME_URL=http://localhost:8080 node scripts/playwright_iterate.js",
+    "iterate:remote": "node scripts/playwright_iterate.js",
     "serve": "npx serve build/web -p 8080 --cors"
   },
   "devDependencies": {
