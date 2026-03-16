@@ -1,15 +1,14 @@
-name: Export, Deploy and E2E Test
-
-# NOTE: After merging this workflow, change GitHub Pages source in repo settings:
-#   Settings → Pages → Source → "Deploy from a branch" → branch: gh-pages / root
+name: Branch Preview Deploy
 
 on:
   push:
-    branches: [main]
+    branches:
+      - "claude/**"
   workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: gh-pages-deploy
@@ -20,14 +19,20 @@ env:
   GODOT_RELEASE: "stable"
 
 jobs:
-  export:
-    name: Export and Deploy
+  preview:
+    name: Build and Deploy Preview
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           lfs: true
+
+      - name: Compute branch slug
+        id: slug
+        run: |
+          SLUG="${GITHUB_REF_NAME//\//-}"
+          echo "value=${SLUG}" >> "$GITHUB_OUTPUT"
 
       - name: Install Godot
         run: |
@@ -52,12 +57,6 @@ jobs:
       - name: Import assets
         run: godot --headless --import || true
 
-      - name: Run GUT unit tests
-        run: |
-          godot --headless --import || true
-          godot --headless -s addons/gut/gut_cmdln.gd \
-            -gdir=res://tests/unit -ginclude_subdirs -gexit
-
       - name: Export Web build
         run: |
           mkdir -vp build/web
@@ -69,39 +68,60 @@ jobs:
             https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker@v0.1.7/coi-serviceworker.js
           sed -i 's|</head>|<script src="coi-serviceworker.js"></script>\n</head>|' build/web/index.html
 
-      - name: Deploy to gh-pages branch (root)
+      - name: Deploy preview to gh-pages/preview/<slug>
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: build/web
           publish_branch: gh-pages
-          # keep_files preserves any preview/ subdirectories written by the preview workflow
+          destination_dir: preview/${{ steps.slug.outputs.value }}
           keep_files: true
-          commit_message: "Deploy main build — ${{ github.sha }}"
+          commit_message: "Deploy preview for ${{ github.ref_name }} — ${{ github.sha }}"
 
-  playwright:
-    name: Playwright E2E Tests
-    needs: export
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install Node dependencies
-        run: npm ci
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Run Playwright tests
+      - name: Post preview URL to PR
         env:
-          GAME_URL: "https://haaanky.github.io/didactic-winner/"
-        run: npx playwright test --reporter=list
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          SLUG: ${{ steps.slug.outputs.value }}
+          SHA: ${{ github.sha }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --repo "${OWNER}/${REPO}" \
+            --head "${{ github.ref_name }}" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
 
-      - name: Upload Playwright report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 14
+          if [ -z "${PR_NUMBER}" ]; then
+            echo "No open PR found for this branch — skipping comment."
+            exit 0
+          fi
+
+          PREVIEW_URL="https://${OWNER}.github.io/${REPO}/preview/${SLUG}/"
+
+          MARKER="<!-- preview-bot -->"
+          BODY="$(cat <<HEREDOC
+${MARKER}
+**Preview deployed** for commit \`${SHA:0:7}\`
+
+Play it here: ${PREVIEW_URL}
+
+*Updates automatically on every push. Deleted when this PR closes.*
+HEREDOC
+)"
+
+          EXISTING=$(gh api \
+            "repos/${OWNER}/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | startswith(\"${MARKER}\")) | .id" \
+            | head -1)
+
+          if [ -n "${EXISTING}" ]; then
+            gh api --method PATCH \
+              "repos/${OWNER}/${REPO}/issues/comments/${EXISTING}" \
+              -f body="${BODY}"
+          else
+            gh pr comment "${PR_NUMBER}" \
+              --repo "${OWNER}/${REPO}" \
+              --body "${BODY}"
+          fi
