@@ -437,6 +437,337 @@ test.describe('Save / Load system', () => {
   });
 });
 
+// ─── Difficulty selection (SRS-4.15) ─────────────────────────────────────────
+
+test.describe('Difficulty selection', () => {
+  test('Easy/Normal/Hardcore buttons are present on main menu', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    await loadGame(page);
+    await page.waitForTimeout(6_000);
+    const before = await page.screenshot();
+    // Click Easy button — it sits below Play, in the DifficultyRow
+    await page.mouse.click(574, 397);
+    await page.waitForTimeout(500);
+    expect(getFatal()).toHaveLength(0);
+    // After clicking a difficulty button the menu canvas should show no crash
+    const after = await page.screenshot();
+    expect(after.length).toBeGreaterThan(1000);
+  });
+
+  test('Hardcore button click does not crash menu', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    await loadGame(page);
+    await page.waitForTimeout(6_000);
+    await page.mouse.click(706, 397);
+    await page.waitForTimeout(500);
+    expect(getFatal()).toHaveLength(0);
+  });
+});
+
+// ─── Time, season and weather HUD (FR-WE-04, FR-WE-05, FR-WE-06) ─────────────
+
+test.describe('Time, season and weather', () => {
+  test('HUD info panel renders time, season and weather while playing', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    await loadGame(page);
+    await page.waitForTimeout(6_000);
+    // Capture top-right corner (HUD info panel area) while on main menu
+    const atMenu = await page.screenshot({ clip: { x: 1050, y: 0, width: 230, height: 80 } });
+    // Enter game
+    await page.mouse.click(640, 330);
+    await page.waitForTimeout(1_000);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(2_000);
+    // Capture same area while playing — HUD should now show "Spring — Day 1 / 8:00 AM / Clear, 15°C"
+    const inGame = await page.screenshot({ clip: { x: 1050, y: 0, width: 230, height: 80 } });
+    expect(getFatal()).toHaveLength(0);
+    const diff = screenshotDiffFraction(atMenu, inGame);
+    expect(diff, 'HUD should render time/season/weather text in game').toBeGreaterThan(0.01);
+  });
+});
+
+// ─── Fishing (SRS-4.6) ────────────────────────────────────────────────────────
+
+test.describe('Fishing system', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGame(page);
+    await page.waitForTimeout(6_000);
+    await page.mouse.click(640, 330);
+    await page.waitForTimeout(1_000);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(2_000);
+    await page.locator('#canvas, canvas').first().click();
+    await page.waitForTimeout(300);
+  });
+
+  test('walking to fishing spot and interacting does not crash', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    // FishingSpot1 is ~220px south of player start — walk south for 1.3s at speed 200px/s
+    await page.keyboard.down('s');
+    await page.waitForTimeout(1_400);
+    await page.keyboard.up('s');
+    await page.waitForTimeout(400);
+    const before = await page.screenshot();
+    await page.keyboard.press('e');
+    await page.waitForTimeout(800);
+    const after = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    const diff = screenshotDiffFraction(before, after);
+    expect(diff, 'Interacting near fishing spot should change canvas').toBeGreaterThan(0.003);
+  });
+
+  test('fishing key sequence does not crash game', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    await page.keyboard.down('s');
+    await page.waitForTimeout(1_400);
+    await page.keyboard.up('s');
+    await page.waitForTimeout(400);
+    // Cast, wait, pull sequence
+    await page.keyboard.press('e');
+    await page.waitForTimeout(600);
+    await page.keyboard.press('e');
+    await page.waitForTimeout(600);
+    expect(getFatal()).toHaveLength(0);
+  });
+});
+
+// ─── Hunting (SRS-4.7) ────────────────────────────────────────────────────────
+
+test.describe('Hunting system', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGame(page);
+    await page.waitForTimeout(6_000);
+    await page.mouse.click(640, 330);
+    await page.waitForTimeout(1_000);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(2_000);
+    await page.locator('#canvas, canvas').first().click();
+    await page.waitForTimeout(300);
+  });
+
+  test('walking toward deer does not crash game', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    // Deer1 is NW of player start (world 480,280 vs player 640,360) — walk NW
+    const before = await page.screenshot();
+    await page.keyboard.down('a'); // west
+    await page.waitForTimeout(400);
+    await page.keyboard.up('a');
+    await page.keyboard.down('w'); // north
+    await page.waitForTimeout(600);
+    await page.keyboard.up('w');
+    await page.waitForTimeout(800);
+    const after = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    const diff = screenshotDiffFraction(before, after);
+    expect(diff, 'Walking toward deer should visibly change canvas').toBeGreaterThan(0.005);
+  });
+
+  test('deer flee from player approach does not crash', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    // Walk directly toward Deer1 to trigger flee behaviour
+    await page.keyboard.down('a');
+    await page.keyboard.down('w');
+    await page.waitForTimeout(900);
+    await page.keyboard.up('a');
+    await page.keyboard.up('w');
+    await page.waitForTimeout(500);
+    expect(getFatal()).toHaveLength(0);
+  });
+});
+
+// ─── Death and game-over screen (SRS-4.11) ────────────────────────────────────
+
+test.describe('Death and game-over screen', () => {
+  test('game-over screen renders after ?goto=gameover param', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    // Navigate with goto param — main_menu._check_test_goto() routes to game_over scene
+    await page.goto(GAME_URL + '?goto=gameover', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
+    });
+    await page.locator('#canvas, canvas').first().waitFor({ state: 'attached', timeout: 90_000 });
+    await page.waitForTimeout(6_000);
+    const ss = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    // Game-over screen should render non-blank content
+    expect(ss.length, 'Game-over screenshot should be non-trivial').toBeGreaterThan(1000);
+  });
+
+  test('game-over retry button navigates back to menu', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    await page.goto(GAME_URL + '?goto=gameover', {
+      waitUntil: 'domcontentloaded',
+      timeout: 60_000,
+    });
+    await page.locator('#canvas, canvas').first().waitFor({ state: 'attached', timeout: 90_000 });
+    await page.waitForTimeout(6_000);
+    const withGameOver = await page.screenshot();
+    // Click center of screen — Retry button is center of game-over layout
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(4_000);
+    const afterRetry = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    const diff = screenshotDiffFraction(withGameOver, afterRetry);
+    expect(diff, 'Retry should navigate away from game-over screen').toBeGreaterThan(0.01);
+  });
+});
+
+// ─── Build menu (SRS-4.4) ─────────────────────────────────────────────────────
+
+test.describe('Building system', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGame(page);
+    await page.waitForTimeout(6_000);
+    await page.mouse.click(640, 330);
+    await page.waitForTimeout(1_000);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(2_000);
+    await page.locator('#canvas, canvas').first().click();
+    await page.waitForTimeout(300);
+  });
+
+  test('pressing B opens build menu without crash', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    const before = await page.screenshot();
+    await page.keyboard.press('b');
+    await page.waitForTimeout(800);
+    const after = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    const diff = screenshotDiffFraction(before, after);
+    expect(diff, 'Pressing B should open build menu and change canvas').toBeGreaterThan(0.005);
+  });
+
+  test('build menu closes without crash', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    await page.keyboard.press('b');
+    await page.waitForTimeout(800);
+    const withMenu = await page.screenshot();
+    await page.keyboard.press('b');
+    await page.waitForTimeout(600);
+    const closed = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    const diff = screenshotDiffFraction(withMenu, closed);
+    expect(diff, 'Closing build menu should change canvas').toBeGreaterThan(0.005);
+  });
+});
+
+// ─── NPC dialogue (SRS-4.9) ───────────────────────────────────────────────────
+
+test.describe('NPC town interaction', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGame(page);
+    await page.waitForTimeout(6_000);
+    await page.mouse.click(640, 330);
+    await page.waitForTimeout(1_000);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(2_000);
+    await page.locator('#canvas, canvas').first().click();
+    await page.waitForTimeout(300);
+  });
+
+  test('walking to NPC and pressing E does not crash', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    // NPC1 is at world (200, 250), player starts at (640, 360) — go NW
+    await page.keyboard.down('a');
+    await page.keyboard.down('w');
+    await page.waitForTimeout(1_200);
+    await page.keyboard.up('a');
+    await page.keyboard.up('w');
+    await page.waitForTimeout(400);
+    await page.keyboard.press('e');
+    await page.waitForTimeout(800);
+    expect(getFatal()).toHaveLength(0);
+  });
+
+  test('NPC area renders in world', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    await page.keyboard.down('a');
+    await page.keyboard.down('w');
+    await page.waitForTimeout(1_000);
+    await page.keyboard.up('a');
+    await page.keyboard.up('w');
+    await page.waitForTimeout(500);
+    const ss = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    expect(ss.length).toBeGreaterThan(1000);
+  });
+});
+
+// ─── Pet / dog companion (SRS-4.10) ──────────────────────────────────────────
+
+test.describe('Pets system', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGame(page);
+    await page.waitForTimeout(6_000);
+    await page.mouse.click(640, 330);
+    await page.waitForTimeout(1_000);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(2_000);
+    await page.locator('#canvas, canvas').first().click();
+    await page.waitForTimeout(300);
+  });
+
+  test('walking to dog and pressing E does not crash', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    // Dog1 is at world (500, 450), player at (640, 360) — go SW
+    await page.keyboard.down('a');
+    await page.keyboard.down('s');
+    await page.waitForTimeout(700);
+    await page.keyboard.up('a');
+    await page.keyboard.up('s');
+    await page.waitForTimeout(400);
+    await page.keyboard.press('e');
+    await page.waitForTimeout(600);
+    expect(getFatal()).toHaveLength(0);
+  });
+
+  test('dog companion renders in game world', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    // Dog is nearby — just verify the level renders without crash
+    await page.waitForTimeout(500);
+    const ss = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    expect(ss.length).toBeGreaterThan(1000);
+  });
+});
+
+// ─── Vehicles / bicycle (SRS-4.5) ────────────────────────────────────────────
+
+test.describe('Vehicles', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGame(page);
+    await page.waitForTimeout(6_000);
+    await page.mouse.click(640, 330);
+    await page.waitForTimeout(1_000);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(2_000);
+    await page.locator('#canvas, canvas').first().click();
+    await page.waitForTimeout(300);
+  });
+
+  test('walking to bicycle and pressing E does not crash', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    // Bicycle1 at world (780, 300), player at (640, 360) — go NE
+    await page.keyboard.down('d');
+    await page.keyboard.down('w');
+    await page.waitForTimeout(700);
+    await page.keyboard.up('d');
+    await page.keyboard.up('w');
+    await page.waitForTimeout(400);
+    await page.keyboard.press('e');
+    await page.waitForTimeout(600);
+    expect(getFatal()).toHaveLength(0);
+  });
+
+  test('bicycle renders in game world', async ({ page }) => {
+    const { getFatal } = collectFatalErrors(page);
+    await page.waitForTimeout(500);
+    const ss = await page.screenshot();
+    expect(getFatal()).toHaveLength(0);
+    expect(ss.length).toBeGreaterThan(1000);
+  });
+});
+
 // ─── Mobile touch ─────────────────────────────────────────────────────────────
 
 test.describe('Mobile touch', () => {

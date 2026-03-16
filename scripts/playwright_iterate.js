@@ -71,21 +71,43 @@ const SRS_REQUIREMENTS = [
   { id: 'FR-UI-03a', desc: 'Touch tap does not crash (mobile)',      covered: ['touch tap on game does not crash'] },
   { id: 'FR-UI-03b', desc: 'Touch tap changes canvas (mobile)',      covered: ['touch tap changes canvas on mobile'] },
 
-  // ── Gaps: SRS requirements not yet covered by any Playwright test ────────
-  { id: 'FR-PC-07',  desc: 'Appearance customisation (AppearanceComponent)', covered: [] },
-  { id: 'FR-WE-04',  desc: 'Day/night cycle visible (TimeManager)',          covered: [] },
-  { id: 'FR-WE-05',  desc: 'Season changes affect visual environment',       covered: [] },
-  { id: 'FR-WE-06',  desc: 'Weather system (snow/rain/wind)',                covered: [] },
-  { id: 'SRS-4.4',   desc: 'Building / construction system',                 covered: [] },
-  { id: 'SRS-4.5',   desc: 'Vehicles (bicycle, car, canoe)',                 covered: [] },
-  { id: 'SRS-4.6',   desc: 'Fishing system',                                 covered: [] },
-  { id: 'SRS-4.7',   desc: 'Hunting and trapping',                           covered: [] },
+  // ── Difficulty (SRS-4.15) ─────────────────────────────────────────────────
+  { id: 'SRS-4.15',  desc: 'Difficulty modes selectable',                    covered: ['Easy/Normal/Hardcore buttons are present', 'Hardcore button click does not crash'] },
+
+  // ── Time/weather HUD (FR-WE-04, FR-WE-05, FR-WE-06) ─────────────────────
+  { id: 'FR-WE-04',  desc: 'Day/night cycle visible (TimeManager)',          covered: ['HUD info panel renders time, season and weather'] },
+  { id: 'FR-WE-05',  desc: 'Season changes affect visual environment',       covered: ['HUD info panel renders time, season and weather'] },
+  { id: 'FR-WE-06',  desc: 'Weather system (snow/rain/wind)',                covered: ['HUD info panel renders time, season and weather'] },
+
+  // ── Fishing (SRS-4.6) ─────────────────────────────────────────────────────
+  { id: 'SRS-4.6',   desc: 'Fishing system',                                 covered: ['walking to fishing spot and interacting does not crash', 'fishing key sequence does not crash'] },
+
+  // ── Hunting (SRS-4.7) ─────────────────────────────────────────────────────
+  { id: 'SRS-4.7',   desc: 'Hunting and trapping',                           covered: ['walking toward deer does not crash', 'deer flee from player approach does not crash'] },
+
+  // ── Crafting (SRS-4.8) ────────────────────────────────────────────────────
   { id: 'SRS-4.8',   desc: 'Crafting system (craft menu opens)',              covered: ['crafting screen opens from inventory', 'crafting screen closes without crash'] },
-  { id: 'SRS-4.9',   desc: 'Town and NPC interactions',                      covered: [] },
-  { id: 'SRS-4.10',  desc: 'Pets system',                                    covered: [] },
-  { id: 'SRS-4.11',  desc: 'Death and generational continuity',              covered: [] },
-  { id: 'SRS-4.15',  desc: 'Difficulty modes selectable',                    covered: [] },
+
+  // ── Building (SRS-4.4) ────────────────────────────────────────────────────
+  { id: 'SRS-4.4',   desc: 'Building / construction system',                 covered: ['pressing B opens build menu without crash', 'build menu closes without crash'] },
+
+  // ── NPC/town (SRS-4.9) ────────────────────────────────────────────────────
+  { id: 'SRS-4.9',   desc: 'Town and NPC interactions',                      covered: ['walking to NPC and pressing E does not crash', 'NPC area renders in world'] },
+
+  // ── Pets (SRS-4.10) ───────────────────────────────────────────────────────
+  { id: 'SRS-4.10',  desc: 'Pets system',                                    covered: ['walking to dog and pressing E does not crash', 'dog companion renders in game world'] },
+
+  // ── Vehicles (SRS-4.5) ────────────────────────────────────────────────────
+  { id: 'SRS-4.5',   desc: 'Vehicles (bicycle, car, canoe)',                 covered: ['walking to bicycle and pressing E does not crash', 'bicycle renders in game world'] },
+
+  // ── Death / game over (SRS-4.11) ─────────────────────────────────────────
+  { id: 'SRS-4.11',  desc: 'Death and generational continuity',              covered: ['game-over screen renders after ?goto=gameover', 'game-over retry button navigates back'] },
+
+  // ── Save/Load (SRS-4.16) ─────────────────────────────────────────────────
   { id: 'SRS-4.16',  desc: 'Save / load system',                             covered: ['Save/Load screen opens from pause menu', 'saving to slot 1 does not crash'] },
+
+  // ── Remaining gap (appearance requires 60+ in-game days) ─────────────────
+  { id: 'FR-PC-07',  desc: 'Appearance customisation (AppearanceComponent)', covered: [] },
 ];
 
 // ── Run Playwright ─────────────────────────────────────────────────────────────

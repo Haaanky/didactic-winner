@@ -69,3 +69,16 @@ signal appearance_changed()
 signal journal_entry_added(entry: String)
 signal ui_screen_opened(screen_name: String)
 signal ui_screen_closed(screen_name: String)
+
+# ── Dialogue ──────────────────────────────────────────────────────────────────
+signal dialogue_started(speaker_name: String, lines: Array)
+
+# ── Building ──────────────────────────────────────────────────────────────────
+signal structure_placed(structure_id: String, world_position: Vector2)
+
+# ── Pets / companions ─────────────────────────────────────────────────────────
+signal companion_adopted(companion_name: String)
+
+# ── Vehicles ──────────────────────────────────────────────────────────────────
+signal vehicle_mounted(vehicle_type: String)
+signal vehicle_dismounted()

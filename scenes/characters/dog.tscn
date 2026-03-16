@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://dog001"]
+
+[ext_resource type="Script" uid="uid://scrdog1" path="res://scripts/characters/dog.gd" id="1_dog"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_1"]
+radius = 8.0
+height = 16.0
+
+[node name="Dog" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 1
+script = ExtResource("1_dog")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_1")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+modulate = Color(0.75, 0.55, 0.3, 1)

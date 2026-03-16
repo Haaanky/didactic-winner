@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=3 uid="uid://level01scene"]
+[gd_scene load_steps=38 format=3 uid="uid://level01scene"]
 
 [ext_resource type="Script" path="res://scripts/world/background.gd" id="1_bg"]
 [ext_resource type="Script" path="res://scripts/world/day_night_layer.gd" id="2_daynight"]
@@ -19,6 +19,12 @@
 [ext_resource type="PackedScene" uid="uid://jrnlscr001" path="res://scenes/ui/journal_screen.tscn" id="17_journal"]
 [ext_resource type="PackedScene" uid="uid://savescr001" path="res://scenes/ui/save_screen.tscn" id="18_save"]
 [ext_resource type="PackedScene" uid="uid://deer001" path="res://scenes/objects/deer.tscn" id="19_deer"]
+[ext_resource type="PackedScene" uid="uid://npc001" path="res://scenes/characters/npc.tscn" id="20_npc"]
+[ext_resource type="PackedScene" uid="uid://dog001" path="res://scenes/characters/dog.tscn" id="21_dog"]
+[ext_resource type="PackedScene" uid="uid://bicycle001" path="res://scenes/objects/bicycle.tscn" id="22_bicycle"]
+[ext_resource type="PackedScene" uid="uid://buildmenu001" path="res://scenes/ui/build_menu.tscn" id="23_buildmenu"]
+[ext_resource type="PackedScene" uid="uid://dialoguescr001" path="res://scenes/ui/dialogue_screen.tscn" id="24_dialogue"]
+[ext_resource type="Script" uid="uid://scrbuildmode1" path="res://scripts/player/build_mode.gd" id="25_buildmode"]
 
 [node name="Level01" type="Node2D"]
 
@@ -267,3 +273,21 @@ player = NodePath("../Player")
 [node name="TouchController" parent="." instance=ExtResource("5_touch")]
 
 [node name="ControlsOverlay" parent="." instance=ExtResource("6_ctrloverlay")]
+
+[node name="NPC1" parent="World/Objects" instance=ExtResource("20_npc")]
+position = Vector2(200, 250)
+npc_name = "Old Trapper"
+
+[node name="Dog1" parent="World/Objects" instance=ExtResource("21_dog")]
+position = Vector2(500, 450)
+dog_name = "Kodiak"
+
+[node name="Bicycle1" parent="World/Objects" instance=ExtResource("22_bicycle")]
+position = Vector2(780, 300)
+
+[node name="BuildMenu" parent="." instance=ExtResource("23_buildmenu")]
+
+[node name="DialogueScreen" parent="." instance=ExtResource("24_dialogue")]
+
+[node name="BuildMode" type="Node" parent="."]
+script = ExtResource("25_buildmode")

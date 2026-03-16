@@ -50,6 +50,28 @@ custom_minimum_size = Vector2(240, 56)
 text = "Play"
 theme_override_font_sizes/font_size = 20
 
+[node name="DifficultyRow" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="EasyButton" type="Button" parent="CenterContainer/VBoxContainer/DifficultyRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(76, 44)
+text = "Easy"
+theme_override_font_sizes/font_size = 16
+
+[node name="NormalButton" type="Button" parent="CenterContainer/VBoxContainer/DifficultyRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(76, 44)
+text = "Normal"
+theme_override_font_sizes/font_size = 16
+
+[node name="HardcoreButton" type="Button" parent="CenterContainer/VBoxContainer/DifficultyRow"]
+layout_mode = 2
+custom_minimum_size = Vector2(76, 44)
+text = "Hardcore"
+theme_override_font_sizes/font_size = 16
+
 [node name="QuitButton" type="Button" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
 custom_minimum_size = Vector2(240, 56)
