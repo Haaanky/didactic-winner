@@ -1,8 +1,5 @@
 name: Export, Deploy and E2E Test
 
-# NOTE: After merging this workflow, change GitHub Pages source in repo settings:
-#   Settings → Pages → Source → "Deploy from a branch" → branch: gh-pages / root
-
 on:
   push:
     branches: [main]
@@ -10,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pages: write
 
 concurrency:
   group: gh-pages-deploy
@@ -68,6 +66,15 @@ jobs:
           curl -fsSL -o build/web/coi-serviceworker.js \
             https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker@master/coi-serviceworker.js
           sed -i 's|</head>|<script src="coi-serviceworker.js"></script>\n</head>|' build/web/index.html
+
+      - name: Configure GitHub Pages source to gh-pages branch
+        run: |
+          curl -sf -X PUT \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" \
+            -d '{"source":{"branch":"gh-pages","path":"/"}}' || true
 
       - name: Deploy to gh-pages branch (root)
         uses: peaceiris/actions-gh-pages@v4
