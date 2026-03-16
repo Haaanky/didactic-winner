@@ -1,4 +1,4 @@
-name: Branch Preview Deploy
+name: Branch Preview Build
 
 on:
   push:
@@ -9,11 +9,9 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  pages: write
-  id-token: write
 
 concurrency:
-  group: gh-pages-deploy
+  group: gh-pages-preview-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -22,11 +20,8 @@ env:
 
 jobs:
   preview:
-    name: Build and Deploy Preview
+    name: Build and Verify
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,26 +62,28 @@ jobs:
             https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker@master/coi-serviceworker.js
           sed -i 's|</head>|<script src="coi-serviceworker.js"></script>\n</head>|' build/web/index.html
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
+      - name: Verify build artifacts
+        run: |
+          echo "Build contents:"
+          ls -lh build/web/
+          echo "WASM size: $(du -sh build/web/index.wasm 2>/dev/null || echo 'missing')"
+          echo "PCK size:  $(du -sh build/web/index.pck  2>/dev/null || echo 'missing')"
+          test -f build/web/index.html
+          test -f build/web/index.wasm
+          test -f build/web/index.pck
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
         with:
-          path: build/web
+          name: web-build-${{ github.sha }}
+          path: build/web/
+          retention-days: 7
 
-      - name: Deploy Preview
-        id: deployment
-        uses: actions/deploy-pages@v4
-        with:
-          preview: true
-
-      - name: Post preview URL to PR
+      - name: Post build status to PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OWNER: ${{ github.repository_owner }}
           REPO: ${{ github.event.repository.name }}
-          PREVIEW_URL: ${{ steps.deployment.outputs.page_url }}
           SHA: ${{ github.sha }}
         run: |
           PR_NUMBER=$(gh pr list \
@@ -102,8 +99,10 @@ jobs:
           fi
 
           MARKER="<!-- preview-bot -->"
-          BODY=$(printf '%s\n**Preview deployed** for commit `%s`\n\nPlay it here: %s\n\n*Updates automatically on every push. Deleted when this PR closes.*' \
-            "${MARKER}" "${SHA:0:7}" "${PREVIEW_URL}")
+          WASM_MB=$(du -m build/web/index.wasm | cut -f1)
+          PCK_MB=$(du -m build/web/index.pck | cut -f1)
+          BODY=$(printf '%s\n**Web build verified** for commit `%s`\n\n| File | Size |\n|------|------|\n| index.wasm | %s MB |\n| index.pck | %s MB |\n\nThe live site at https://%s.github.io/%s/ will update after this PR is merged.' \
+            "${MARKER}" "${SHA:0:7}" "${WASM_MB}" "${PCK_MB}" "${OWNER}" "${REPO}")
 
           EXISTING=$(gh api \
             "repos/${OWNER}/${REPO}/issues/${PR_NUMBER}/comments" \
