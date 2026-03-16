@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  GODOT_VERSION: "4.4"
+  GODOT_VERSION: "4.6"
   GODOT_RELEASE: "stable"
 
 jobs:
