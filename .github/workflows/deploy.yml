@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: gh-pages-deploy
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   GODOT_VERSION: "4.6"
