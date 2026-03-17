@@ -117,3 +117,25 @@ func test_save_button_emits_ui_screen_opened_save_load() -> void:
 	watch_signals(EventBus)
 	_menu.save_button.pressed.emit()
 	assert_signal_emitted_with_parameters(EventBus, "ui_screen_opened", ["save_load"])
+
+
+# ── Keyboard: Escape key resumes game when pause menu is visible ──────────────
+
+func test_escape_key_when_visible_emits_game_paused_false() -> void:
+	_menu.show()
+	watch_signals(EventBus)
+	var key := InputEventKey.new()
+	key.pressed = true
+	key.keycode = KEY_ESCAPE
+	_menu._input(key)
+	assert_signal_emitted_with_parameters(EventBus, "game_paused", [false])
+	get_tree().paused = false
+
+
+func test_escape_key_when_hidden_does_nothing() -> void:
+	watch_signals(EventBus)
+	var key := InputEventKey.new()
+	key.pressed = true
+	key.keycode = KEY_ESCAPE
+	_menu._input(key)
+	assert_signal_not_emitted(EventBus, "game_paused")

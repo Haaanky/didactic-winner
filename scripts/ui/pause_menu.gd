@@ -23,6 +23,12 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if not visible:
 		return
+	if event is InputEventKey:
+		var key := event as InputEventKey
+		if key.pressed and key.keycode == KEY_ESCAPE:
+			get_viewport().set_input_as_handled()
+			_on_resume_pressed()
+			return
 	if not (event is InputEventScreenTouch):
 		return
 	var touch := event as InputEventScreenTouch
