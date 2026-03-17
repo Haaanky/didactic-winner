@@ -1,4 +1,4 @@
-name: Branch Preview Deploy
+name: Branch Preview Build
 
 on:
   push:
@@ -7,12 +7,12 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pull-requests: write
 
 concurrency:
-  group: gh-pages-deploy
-  cancel-in-progress: false
+  group: gh-pages-preview-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   GODOT_VERSION: "4.6"
@@ -20,19 +20,13 @@ env:
 
 jobs:
   preview:
-    name: Build and Deploy Preview
+    name: Build and Verify
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           lfs: true
-
-      - name: Compute branch slug
-        id: slug
-        run: |
-          SLUG="${GITHUB_REF_NAME//\//-}"
-          echo "value=${SLUG}" >> "$GITHUB_OUTPUT"
 
       - name: Install Godot
         run: |
@@ -68,22 +62,28 @@ jobs:
             https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker@master/coi-serviceworker.js
           sed -i 's|</head>|<script src="coi-serviceworker.js"></script>\n</head>|' build/web/index.html
 
-      - name: Deploy preview to gh-pages/preview/<slug>
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: build/web
-          publish_branch: gh-pages
-          destination_dir: preview/${{ steps.slug.outputs.value }}
-          keep_files: true
-          commit_message: "Deploy preview for ${{ github.ref_name }} — ${{ github.sha }}"
+      - name: Verify build artifacts
+        run: |
+          echo "Build contents:"
+          ls -lh build/web/
+          echo "WASM size: $(du -sh build/web/index.wasm 2>/dev/null || echo 'missing')"
+          echo "PCK size:  $(du -sh build/web/index.pck  2>/dev/null || echo 'missing')"
+          test -f build/web/index.html
+          test -f build/web/index.wasm
+          test -f build/web/index.pck
 
-      - name: Post preview URL to PR
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build-${{ github.sha }}
+          path: build/web/
+          retention-days: 7
+
+      - name: Post build status to PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OWNER: ${{ github.repository_owner }}
           REPO: ${{ github.event.repository.name }}
-          SLUG: ${{ steps.slug.outputs.value }}
           SHA: ${{ github.sha }}
         run: |
           PR_NUMBER=$(gh pr list \
@@ -98,18 +98,11 @@ jobs:
             exit 0
           fi
 
-          PREVIEW_URL="https://${OWNER}.github.io/${REPO}/preview/${SLUG}/"
-
           MARKER="<!-- preview-bot -->"
-          BODY="$(cat <<HEREDOC
-${MARKER}
-**Preview deployed** for commit \`${SHA:0:7}\`
-
-Play it here: ${PREVIEW_URL}
-
-*Updates automatically on every push. Deleted when this PR closes.*
-HEREDOC
-)"
+          WASM_MB=$(du -m build/web/index.wasm | cut -f1)
+          PCK_MB=$(du -m build/web/index.pck | cut -f1)
+          BODY=$(printf '%s\n**Web build verified** for commit `%s`\n\n| File | Size |\n|------|------|\n| index.wasm | %s MB |\n| index.pck | %s MB |\n\nThe live site at https://%s.github.io/%s/ will update after this PR is merged.' \
+            "${MARKER}" "${SHA:0:7}" "${WASM_MB}" "${PCK_MB}" "${OWNER}" "${REPO}")
 
           EXISTING=$(gh api \
             "repos/${OWNER}/${REPO}/issues/${PR_NUMBER}/comments" \

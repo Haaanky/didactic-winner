@@ -1,19 +1,18 @@
 name: Export, Deploy and E2E Test
 
-# NOTE: After merging this workflow, change GitHub Pages source in repo settings:
-#   Settings → Pages → Source → "Deploy from a branch" → branch: gh-pages / root
-
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: gh-pages-deploy
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   GODOT_VERSION: "4.6"
@@ -23,6 +22,9 @@ jobs:
   export:
     name: Export and Deploy
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -69,15 +71,17 @@ jobs:
             https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker@master/coi-serviceworker.js
           sed -i 's|</head>|<script src="coi-serviceworker.js"></script>\n</head>|' build/web/index.html
 
-      - name: Deploy to gh-pages branch (root)
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: build/web
-          publish_branch: gh-pages
-          # keep_files preserves any preview/ subdirectories written by the preview workflow
-          keep_files: true
-          commit_message: "Deploy main build — ${{ github.sha }}"
+          path: build/web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
 
   playwright:
     name: Playwright E2E Tests
