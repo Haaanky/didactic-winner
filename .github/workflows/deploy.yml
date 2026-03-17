@@ -11,11 +11,11 @@ permissions:
   id-token: write
 
 concurrency:
-  group: gh-pages-deploy
-  cancel-in-progress: true
+  group: "pages"
+  cancel-in-progress: false
 
 env:
-  GODOT_VERSION: "4.6"
+  GODOT_VERSION: "4.6.1"
   GODOT_RELEASE: "stable"
 
 jobs:
