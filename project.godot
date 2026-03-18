@@ -25,6 +25,7 @@ WeatherManager="*res://scripts/autoloads/weather_manager.gd"
 AudioManager="*res://scripts/autoloads/audio_manager.gd"
 SaveManager="*res://scripts/autoloads/save_manager.gd"
 ItemDatabase="*res://scripts/autoloads/item_database.gd"
+GeneratedAssetLoader="*res://scripts/autoloads/generated_asset_loader.gd"
 
 [display]
 
