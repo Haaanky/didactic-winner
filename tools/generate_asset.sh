@@ -7,10 +7,16 @@
 #   Music  : POST https://api.replicate.com/v1/predictions
 #            GET  https://api.replicate.com/v1/predictions/{id}
 #
-# Usage:
+# Usage (positional arguments):
 #   ./tools/generate_asset.sh sprite "a pixel-art campfire in Alaska"
 #   ./tools/generate_asset.sh sfx    "crackling campfire ambience"
 #   ./tools/generate_asset.sh music  "peaceful acoustic guitar, Alaskan wilderness"
+#
+# Usage (JSON spec file):
+#   ./tools/generate_asset.sh spec.json
+#
+#   spec.json format:
+#   { "type": "sprite|sfx|music", "prompt": "description text" }
 #
 # Environment variables (or .env file in project root):
 #   OPENAI_API_KEY       — required for sprite generation
@@ -39,7 +45,7 @@ if [[ -f "$PROJECT_ROOT/.env" ]]; then
 fi
 
 slugify() {
-  echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g' | sed 's/__*/_/g' | sed 's/^_//;s/_$//' | cut -c1-40
+  echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g' | sed 's/__*/_/g' | sed 's/^_//;s/_$//' | cut -c1-32
 }
 
 timestamp() {
@@ -75,17 +81,17 @@ generate_sprite() {
       model: "dall-e-3",
       prompt: $p,
       n: 1,
-      size: "1024x1024",
-      response_format: "b64_json"
+      size: "256x256",
+      response_format: "url"
     }')")"
 
-  local b64
-  b64="$(echo "$response" | jq -r '.data[0].b64_json // empty')"
-  [[ -z "$b64" ]] && die "No image data in response: $(echo "$response" | head -c 200)"
+  local image_url
+  image_url="$(echo "$response" | jq -r '.data[0].url // empty')"
+  [[ -z "$image_url" ]] && die "No image URL in response: $(echo "$response" | head -c 200)"
 
   local filename
   filename="$(build_filename sprite "$prompt" png)"
-  echo "$b64" | base64 -d > "$OUTPUT_DIR/$filename"
+  curl -sS -o "$OUTPUT_DIR/$filename" "$image_url"
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
@@ -97,12 +103,12 @@ generate_sfx() {
 
   echo "Generating SFX: $prompt"
   local filename
-  filename="$(build_filename sfx "$prompt" wav)"
+  filename="$(build_filename sfx "$prompt" mp3)"
 
   curl -sS -X POST "$SFX_API_URL" \
     -H "Content-Type: application/json" \
     -H "xi-api-key: $ELEVENLABS_API_KEY" \
-    -d "$(jq -n --arg t "$prompt" '{text: $t, duration_seconds: 5}')" \
+    -d "$(jq -n --arg t "$prompt" '{text: $t, duration_seconds: null, prompt_influence: 0.3}')" \
     -o "$OUTPUT_DIR/$filename"
 
   echo "Saved: $OUTPUT_DIR/$filename"
@@ -152,15 +158,42 @@ generate_music() {
   [[ -z "$audio_url" ]] && die "Music generation timed out"
 
   local filename
-  filename="$(build_filename music "$prompt" ogg)"
+  filename="$(build_filename music "$prompt" mp3)"
   curl -sS -o "$OUTPUT_DIR/$filename" "$audio_url"
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
 # ---- Main ----
 
+if [[ $# -lt 1 ]]; then
+  echo "Usage: $0 <sprite|sfx|music> \"prompt text\""
+  echo "       $0 spec.json"
+  exit 1
+fi
+
+# JSON spec file mode: single argument ending in .json
+if [[ $# -eq 1 && "$1" == *.json ]]; then
+  spec_file="$1"
+  [[ ! -f "$spec_file" ]] && die "Spec file not found: $spec_file"
+
+  asset_type="$(jq -r '.type // empty' "$spec_file")"
+  asset_prompt="$(jq -r '.prompt // empty' "$spec_file")"
+  [[ -z "$asset_type" ]] && die "Spec file missing \"type\" field"
+  [[ -z "$asset_prompt" ]] && die "Spec file missing \"prompt\" field"
+
+  case "$asset_type" in
+    sprite) generate_sprite "$asset_prompt" ;;
+    sfx)    generate_sfx "$asset_prompt" ;;
+    music)  generate_music "$asset_prompt" ;;
+    *)      die "Unknown asset type in spec: $asset_type (use sprite, sfx, or music)" ;;
+  esac
+  exit 0
+fi
+
+# Positional argument mode
 if [[ $# -lt 2 ]]; then
   echo "Usage: $0 <sprite|sfx|music> \"prompt text\""
+  echo "       $0 spec.json"
   exit 1
 fi
 

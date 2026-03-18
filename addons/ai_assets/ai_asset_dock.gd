@@ -15,9 +15,10 @@ const SFX_API_URL := "https://api.elevenlabs.io/v1/sound-generation"
 const MUSIC_API_URL := "https://api.replicate.com/v1/predictions"
 
 const OUTPUT_DIR := "res://assets/generated/"
-const TIMEOUT_SEC := 30.0
+const TIMEOUT_MSEC := 30000
 const MUSIC_POLL_INTERVAL_SEC := 3.0
 const MUSIC_POLL_MAX_ATTEMPTS := 20
+const SLUG_MAX_LENGTH := 32
 
 @onready var _type_option: OptionButton = %TypeOption
 @onready var _prompt_edit: TextEdit = %PromptEdit
@@ -28,8 +29,8 @@ const MUSIC_POLL_MAX_ATTEMPTS := 20
 func _ready() -> void:
 	_type_option.clear()
 	_type_option.add_item("Sprite (PNG)", AssetType.SPRITE)
-	_type_option.add_item("SFX (WAV)", AssetType.SFX)
-	_type_option.add_item("Music (OGG)", AssetType.MUSIC)
+	_type_option.add_item("SFX (MP3)", AssetType.SFX)
+	_type_option.add_item("Music (MP3)", AssetType.MUSIC)
 	_generate_button.pressed.connect(_on_generate_pressed)
 
 
@@ -58,6 +59,7 @@ func _on_generate_pressed() -> void:
 func _generate_sprite(prompt_text: String) -> void:
 	var api_key := _get_env("OPENAI_API_KEY")
 	if api_key.is_empty():
+		push_error("AIAssetDock: OPENAI_API_KEY environment variable not set")
 		_set_status("Error: OPENAI_API_KEY not set.")
 		return
 
@@ -65,19 +67,19 @@ func _generate_sprite(prompt_text: String) -> void:
 		"model": "dall-e-3",
 		"prompt": prompt_text,
 		"n": 1,
-		"size": "1024x1024",
-		"response_format": "b64_json",
+		"size": "256x256",
+		"response_format": "url",
 	}
 
-	var result := await _fetch_async(
+	var result := await fetch_async(
 		SPRITE_API_URL,
-		["Content-Type: application/json", "Authorization: Bearer %s" % api_key],
+		PackedStringArray(["Content-Type: application/json", "Authorization: Bearer %s" % api_key]),
 		JSON.stringify(body),
 	)
 	if result.is_empty():
 		return
 
-	var json: Dictionary = _parse_json(result)
+	var json: Dictionary = _parse_json(result["body"])
 	if json.is_empty():
 		return
 
@@ -85,10 +87,24 @@ func _generate_sprite(prompt_text: String) -> void:
 		_set_status("Error: unexpected API response — no image data.")
 		return
 
-	var b64_string: String = json["data"][0]["b64_json"]
-	var image_bytes := Marshalls.base64_to_raw(b64_string)
+	var image_data: Dictionary = json["data"][0]
 	var file_path := _build_output_path("sprite", prompt_text, "png")
-	_save_bytes(file_path, image_bytes)
+
+	if image_data.has("b64_json"):
+		var image_bytes := Marshalls.base64_to_raw(image_data["b64_json"])
+		_save_bytes(file_path, image_bytes)
+	elif image_data.has("url"):
+		var download := await fetch_async(
+			image_data["url"],
+			PackedStringArray([]),
+			"",
+			HTTPClient.METHOD_GET,
+		)
+		if download.is_empty():
+			return
+		_save_bytes(file_path, download["body_raw"])
+	else:
+		_set_status("Error: no url or b64_json in response.")
 
 
 # ---------------------------------------------------------------------------
@@ -98,26 +114,26 @@ func _generate_sprite(prompt_text: String) -> void:
 func _generate_sfx(prompt_text: String) -> void:
 	var api_key := _get_env("ELEVENLABS_API_KEY")
 	if api_key.is_empty():
+		push_error("AIAssetDock: ELEVENLABS_API_KEY environment variable not set")
 		_set_status("Error: ELEVENLABS_API_KEY not set.")
 		return
 
 	var body := {
 		"text": prompt_text,
-		"duration_seconds": 5.0,
+		"duration_seconds": null,
+		"prompt_influence": 0.3,
 	}
 
-	var result := await _fetch_async(
+	var result := await fetch_async(
 		SFX_API_URL,
-		["Content-Type: application/json", "xi-api-key: %s" % api_key],
+		PackedStringArray(["Content-Type: application/json", "xi-api-key: %s" % api_key]),
 		JSON.stringify(body),
 	)
 	if result.is_empty():
 		return
 
-	# ElevenLabs returns raw audio bytes directly
-	var file_path := _build_output_path("sfx", prompt_text, "wav")
-	_save_bytes(file_path, result.to_utf8_buffer() if result is String else PackedByteArray())
-	_set_status("Note: SFX saved. If the file is invalid, the API may have returned an error in JSON form.")
+	var file_path := _build_output_path("sfx", prompt_text, "mp3")
+	_save_bytes(file_path, result["body_raw"])
 
 
 # ---------------------------------------------------------------------------
@@ -127,6 +143,7 @@ func _generate_sfx(prompt_text: String) -> void:
 func _generate_music(prompt_text: String) -> void:
 	var api_key := _get_env("REPLICATE_API_TOKEN")
 	if api_key.is_empty():
+		push_error("AIAssetDock: REPLICATE_API_TOKEN environment variable not set")
 		_set_status("Error: REPLICATE_API_TOKEN not set.")
 		return
 
@@ -139,16 +156,16 @@ func _generate_music(prompt_text: String) -> void:
 		},
 	}
 
-	var headers := [
+	var headers := PackedStringArray([
 		"Content-Type: application/json",
 		"Authorization: Bearer %s" % api_key,
-	]
+	])
 
-	var result := await _fetch_async(MUSIC_API_URL, headers, JSON.stringify(body))
+	var result := await fetch_async(MUSIC_API_URL, headers, JSON.stringify(body))
 	if result.is_empty():
 		return
 
-	var json: Dictionary = _parse_json(result)
+	var json: Dictionary = _parse_json(result["body"])
 	if json.is_empty():
 		return
 
@@ -163,25 +180,24 @@ func _generate_music(prompt_text: String) -> void:
 	if audio_url.is_empty():
 		return
 
-	# Download the audio file from the output URL
-	var audio_result := await _fetch_async(audio_url, [], "")
+	var audio_result := await fetch_async(audio_url, PackedStringArray([]), "", HTTPClient.METHOD_GET)
 	if audio_result.is_empty():
 		return
 
-	var file_path := _build_output_path("music", prompt_text, "ogg")
-	_save_bytes(file_path, audio_result.to_utf8_buffer() if audio_result is String else PackedByteArray())
+	var file_path := _build_output_path("music", prompt_text, "mp3")
+	_save_bytes(file_path, audio_result["body_raw"])
 
 
-func _poll_replicate(poll_url: String, headers: Array) -> String:
+func _poll_replicate(poll_url: String, headers: PackedStringArray) -> String:
 	for i: int in range(MUSIC_POLL_MAX_ATTEMPTS):
 		await get_tree().create_timer(MUSIC_POLL_INTERVAL_SEC).timeout
 		_set_status("Polling attempt %d / %d..." % [i + 1, MUSIC_POLL_MAX_ATTEMPTS])
 
-		var result := await _fetch_async(poll_url, headers, "", HTTPClient.METHOD_GET)
+		var result := await fetch_async(poll_url, headers, "", HTTPClient.METHOD_GET)
 		if result.is_empty():
 			return ""
 
-		var json: Dictionary = _parse_json(result)
+		var json: Dictionary = _parse_json(result["body"])
 		if json.is_empty():
 			return ""
 
@@ -206,52 +222,109 @@ func _poll_replicate(poll_url: String, headers: Array) -> String:
 # HTTP helper — frame-polling async fetch with timeout
 # ---------------------------------------------------------------------------
 
-func _fetch_async(
+func fetch_async(
 	url: String,
-	headers: Array,
+	headers: PackedStringArray,
 	body: String,
 	method: int = HTTPClient.METHOD_POST,
-) -> String:
-	var http := HTTPRequest.new()
-	add_child(http)
-	http.timeout = TIMEOUT_SEC
+) -> Dictionary:
+	var http := HTTPClient.new()
+	var parsed := _parse_url(url)
 
-	var error: int
+	var err := http.connect_to_host(parsed["host"], parsed["port"], parsed["tls"])
+	if err != OK:
+		push_error("AIAssetDock: connect_to_host failed — error code %d" % err)
+		_set_status("Error: could not connect (code %d)." % err)
+		return {}
+
+	var deadline := Time.get_ticks_msec() + TIMEOUT_MSEC
+
+	while http.get_status() == HTTPClient.STATUS_CONNECTING or http.get_status() == HTTPClient.STATUS_RESOLVING:
+		http.poll()
+		if Time.get_ticks_msec() > deadline:
+			push_error("AIAssetDock: connection to %s timed out" % url)
+			_set_status("Error: connection timed out.")
+			return {}
+		await get_tree().process_frame
+
+	if http.get_status() != HTTPClient.STATUS_CONNECTED:
+		push_error("AIAssetDock: could not connect to %s — status %d" % [url, http.get_status()])
+		_set_status("Error: connection failed (status %d)." % http.get_status())
+		return {}
+
 	if body.is_empty() and method == HTTPClient.METHOD_GET:
-		error = http.request(url, PackedStringArray(headers), method)
+		err = http.request(method, parsed["path"], headers)
 	else:
-		error = http.request(url, PackedStringArray(headers), method, body)
+		err = http.request(method, parsed["path"], headers, body)
 
-	if error != OK:
-		push_error("AIAssetDock: HTTPRequest.request() failed — error code %d" % error)
-		_set_status("Error: HTTP request failed (code %d)." % error)
-		http.queue_free()
-		return ""
+	if err != OK:
+		push_error("AIAssetDock: HTTPClient.request() failed — error code %d" % err)
+		_set_status("Error: HTTP request failed (code %d)." % err)
+		return {}
 
-	var response: Array = await http.request_completed
-	http.queue_free()
+	while http.get_status() == HTTPClient.STATUS_REQUESTING:
+		http.poll()
+		if Time.get_ticks_msec() > deadline:
+			push_error("AIAssetDock: request to %s timed out" % url)
+			_set_status("Error: request timed out.")
+			return {}
+		await get_tree().process_frame
 
-	var result_code: int = response[0]
-	var http_code: int = response[1]
-	var response_body: PackedByteArray = response[3]
+	if not http.has_response():
+		push_error("AIAssetDock: no response from %s" % url)
+		_set_status("Error: no response from server.")
+		return {}
 
-	if result_code != HTTPRequest.RESULT_SUCCESS:
-		push_error("AIAssetDock: request to %s failed — result code %d" % [url, result_code])
-		_set_status("Error: request failed (result %d)." % result_code)
-		return ""
+	var status_code := http.get_response_code()
+	var response_body := PackedByteArray()
 
-	if http_code < 200 or http_code >= 300:
+	while http.get_status() == HTTPClient.STATUS_BODY:
+		http.poll()
+		var chunk := http.read_response_body_chunk()
+		if chunk.size() > 0:
+			response_body.append_array(chunk)
+		if Time.get_ticks_msec() > deadline:
+			push_error("AIAssetDock: reading body from %s timed out" % url)
+			_set_status("Error: response body timed out.")
+			return {}
+		await get_tree().process_frame
+
+	if status_code < 200 or status_code >= 300:
 		var error_text := response_body.get_string_from_utf8()
-		push_error("AIAssetDock: HTTP %d from %s — %s" % [http_code, url, error_text])
-		_set_status("Error: HTTP %d — %s" % [http_code, error_text.left(200)])
-		return ""
+		push_error("AIAssetDock: HTTP %d from %s — %s" % [status_code, url, error_text])
+		_set_status("Error: HTTP %d — %s" % [status_code, error_text.left(200)])
+		return {}
 
-	return response_body.get_string_from_utf8()
+	return {
+		"status_code": status_code,
+		"body": response_body.get_string_from_utf8(),
+		"body_raw": response_body,
+	}
 
 
 # ---------------------------------------------------------------------------
 # Utilities
 # ---------------------------------------------------------------------------
+
+func _parse_url(url: String) -> Dictionary:
+	var tls := url.begins_with("https://")
+	var stripped := url.replace("https://", "").replace("http://", "")
+	var slash_idx := stripped.find("/")
+	var host: String
+	var path: String
+	if slash_idx >= 0:
+		host = stripped.left(slash_idx)
+		path = stripped.substr(slash_idx)
+	else:
+		host = stripped
+		path = "/"
+	var port := 443 if tls else 80
+	var colon_idx := host.find(":")
+	if colon_idx >= 0:
+		port = host.substr(colon_idx + 1).to_int()
+		host = host.left(colon_idx)
+	return {"host": host, "port": port, "path": path, "tls": tls}
+
 
 func _get_env(key: String) -> String:
 	return OS.get_environment(key)
@@ -272,17 +345,15 @@ func _parse_json(text: String) -> Dictionary:
 
 func _slugify(text: String) -> String:
 	var slug := text.to_lower().strip_edges()
-	# Replace non-alphanumeric characters with underscores
 	var result := ""
 	for c: String in slug:
 		if c >= "a" and c <= "z" or c >= "0" and c <= "9":
 			result += c
 		elif result.length() > 0 and not result.ends_with("_"):
 			result += "_"
-	# Trim trailing underscore and limit length
 	result = result.trim_suffix("_")
-	if result.length() > 40:
-		result = result.left(40).trim_suffix("_")
+	if result.length() > SLUG_MAX_LENGTH:
+		result = result.left(SLUG_MAX_LENGTH).trim_suffix("_")
 	return result
 
 
@@ -293,7 +364,6 @@ func _build_output_path(type_prefix: String, prompt_text: String, extension: Str
 
 
 func _save_bytes(file_path: String, data: PackedByteArray) -> void:
-	# Ensure the output directory exists
 	var dir := DirAccess.open("res://")
 	if dir and not dir.dir_exists("assets/generated"):
 		dir.make_dir_recursive("assets/generated")
@@ -306,7 +376,6 @@ func _save_bytes(file_path: String, data: PackedByteArray) -> void:
 	file.store_buffer(data)
 	file.close()
 	_set_status("Saved: %s" % file_path)
-	# Trigger reimport so the asset appears in the FileSystem dock
 	if Engine.is_editor_hint():
 		EditorInterface.get_resource_filesystem().scan()
 
