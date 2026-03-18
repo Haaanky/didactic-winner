@@ -1,0 +1,37 @@
+[gd_scene load_steps=2 format=3 uid="uid://ai_asset_dock"]
+
+[ext_resource type="Script" path="res://addons/ai_assets/ai_asset_dock.gd" id="1"]
+
+[node name="AIAssetDock" type="VBoxContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -0.0
+offset_bottom = -0.0
+script = ExtResource("1")
+
+[node name="Title" type="Label" parent="."]
+text = "AI Asset Generator"
+
+[node name="TypeLabel" type="Label" parent="."]
+text = "Asset Type:"
+
+[node name="TypeOption" type="OptionButton" parent="."]
+unique_name_in_owner = true
+
+[node name="PromptLabel" type="Label" parent="."]
+text = "Prompt:"
+
+[node name="PromptEdit" type="TextEdit" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 80)
+placeholder_text = "Describe the asset you want to generate..."
+
+[node name="GenerateButton" type="Button" parent="."]
+unique_name_in_owner = true
+text = "Generate"
+
+[node name="StatusLabel" type="Label" parent="."]
+unique_name_in_owner = true
+text = ""
+autowrap_mode = 2

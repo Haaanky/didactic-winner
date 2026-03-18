@@ -594,6 +594,52 @@ func test_touch_on_play_button_queues_level_01() -> void:
 
 ---
 
+## Asset Generation Setup
+
+The project includes an **AI Asset Generator** editor plugin (`addons/ai_assets/`) and a CLI batch script (`tools/generate_asset.sh`) for creating sprites, SFX, and music from text prompts.
+
+### API Keys
+
+Keys are read from OS environment variables. For convenience the CLI script also sources `.env` in the project root. Copy `.env.example` to `.env` and fill in any keys you need.
+
+| Variable | Service | Used for |
+|----------|---------|----------|
+| `OPENAI_API_KEY` | OpenAI (DALL-E 3) | Sprite generation |
+| `ELEVENLABS_API_KEY` | ElevenLabs | SFX generation |
+| `REPLICATE_API_TOKEN` | Replicate (Suno) | Music generation |
+
+### API Endpoints
+
+These URLs are defined at the top of both `addons/ai_assets/ai_asset_dock.gd` and `tools/generate_asset.sh`. If an endpoint changes, update **both** files.
+
+| Asset | Method | URL |
+|-------|--------|-----|
+| Sprite | `POST` | `https://api.openai.com/v1/images/generations` |
+| SFX | `POST` | `https://api.elevenlabs.io/v1/sound-generation` |
+| Music (create) | `POST` | `https://api.replicate.com/v1/predictions` |
+| Music (poll) | `GET` | `https://api.replicate.com/v1/predictions/{id}` |
+
+### Generated Files
+
+All generated assets are saved to `assets/generated/` with the naming pattern `{type}_{slug}_{unix_timestamp}.{ext}`. This directory is gitignored.
+
+### Editor Plugin Usage
+
+1. Enable **AI Asset Generator** in **Project > Project Settings > Plugins**
+2. Use the dock panel: pick asset type, enter prompt, click **Generate**
+
+### CLI Usage
+
+```bash
+./tools/generate_asset.sh sprite "a pixel-art campfire in Alaska"
+./tools/generate_asset.sh sfx    "crackling campfire ambience"
+./tools/generate_asset.sh music  "peaceful acoustic guitar, Alaskan wilderness"
+```
+
+Requires `curl` and `jq`.
+
+---
+
 ## Setup Checklist
 
 - [x] Initialize Godot 4 project (`project.godot`)
