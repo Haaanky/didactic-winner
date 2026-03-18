@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 concurrency:
@@ -20,7 +20,7 @@ env:
 
 jobs:
   preview:
-    name: Build and Verify
+    name: Build and Deploy Preview
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -79,12 +79,39 @@ jobs:
           path: build/web/
           retention-days: 7
 
+      - name: Compute branch slug
+        id: slug
+        run: |
+          SLUG="${{ github.ref_name }}"
+          SLUG="${SLUG//\//-}"
+          echo "value=${SLUG}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy preview to gh-pages
+        run: |
+          PREVIEW_DIR="preview/${{ steps.slug.outputs.value }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin gh-pages
+          git worktree add /tmp/gh-pages origin/gh-pages
+
+          rm -rf "/tmp/gh-pages/${PREVIEW_DIR}"
+          mkdir -p "/tmp/gh-pages/${PREVIEW_DIR}"
+          cp -r build/web/. "/tmp/gh-pages/${PREVIEW_DIR}/"
+
+          cd /tmp/gh-pages
+          git add "${PREVIEW_DIR}"
+          git commit -m "Deploy preview for ${{ github.ref_name }} @ ${{ github.sha }}" || echo "Nothing to commit"
+          git push origin gh-pages
+
       - name: Post build status to PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OWNER: ${{ github.repository_owner }}
           REPO: ${{ github.event.repository.name }}
           SHA: ${{ github.sha }}
+          SLUG: ${{ steps.slug.outputs.value }}
         run: |
           PR_NUMBER=$(gh pr list \
             --repo "${OWNER}/${REPO}" \
@@ -101,8 +128,9 @@ jobs:
           MARKER="<!-- preview-bot -->"
           WASM_MB=$(du -m build/web/index.wasm | cut -f1)
           PCK_MB=$(du -m build/web/index.pck | cut -f1)
-          BODY=$(printf '%s\n**Web build verified** for commit `%s`\n\n| File | Size |\n|------|------|\n| index.wasm | %s MB |\n| index.pck | %s MB |\n\nThe live site at https://%s.github.io/%s/ will update after this PR is merged.' \
-            "${MARKER}" "${SHA:0:7}" "${WASM_MB}" "${PCK_MB}" "${OWNER}" "${REPO}")
+          PREVIEW_URL="https://${OWNER}.github.io/${REPO}/preview/${SLUG}/"
+          BODY=$(printf '%s\n**Web preview deployed** for commit `%s`\n\n| File | Size |\n|------|------|\n| index.wasm | %s MB |\n| index.pck | %s MB |\n\n**Preview URL:** %s\n\n*Preview is removed automatically when this PR is closed.*' \
+            "${MARKER}" "${SHA:0:7}" "${WASM_MB}" "${PCK_MB}" "${PREVIEW_URL}")
 
           EXISTING=$(gh api \
             "repos/${OWNER}/${REPO}/issues/${PR_NUMBER}/comments" \
