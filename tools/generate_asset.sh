@@ -2,7 +2,8 @@
 # generate_asset.sh — CLI batch asset generator for Dudes in Alaska
 #
 # Cloud API endpoints (keep in sync with addons/ai_assets/ai_asset_dock.gd):
-#   Sprite : POST https://api.openai.com/v1/images/generations
+#   Sprite : POST https://api.openai.com/v1/images/generations           (OPENAI_API_KEY)
+#          : POST https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell  (HUGGING_FACE)
 #   SFX    : POST https://api.elevenlabs.io/v1/sound-generation
 #   Music  : POST https://api.replicate.com/v1/predictions
 #            GET  https://api.replicate.com/v1/predictions/{id}
@@ -35,7 +36,8 @@
 #   { "type": "sprite|sfx|music", "prompt": "description text" }
 #
 # Environment variables (or .env file in project root):
-#   OPENAI_API_KEY           — required for cloud sprite generation
+#   OPENAI_API_KEY           — cloud sprite generation (DALL-E 3); tried first
+#   HUGGING_FACE             — cloud sprite generation (FLUX.1-schnell); tried if OPENAI fails
 #   ELEVENLABS_API_KEY       — required for cloud SFX generation
 #   REPLICATE_API_TOKEN      — required for cloud music generation
 #   LOCAL_SPRITE_URL         — override local sprite endpoint (optional)
@@ -53,6 +55,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 OUTPUT_DIR="$PROJECT_ROOT/assets/generated"
 
 SPRITE_API_URL="https://api.openai.com/v1/images/generations"
+HF_SPRITE_API_URL="https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
 SFX_API_URL="https://api.elevenlabs.io/v1/sound-generation"
 MUSIC_API_URL="https://api.replicate.com/v1/predictions"
 
@@ -146,8 +149,9 @@ generate_sprite() {
   local prompt="$1"
   local local_url="${LOCAL_SPRITE_URL:-$LOCAL_SPRITE_DEFAULT_URL}"
 
-  if [[ -z "${FORCE_LOCAL_AI:-}" ]] && _try_generate_sprite_cloud "$prompt"; then
-    return 0
+  if [[ -z "${FORCE_LOCAL_AI:-}" ]]; then
+    _try_generate_sprite_cloud "$prompt" && return 0
+    _try_generate_sprite_hf "$prompt" && return 0
   fi
 
   echo "Falling back to local sprite server..."
@@ -197,6 +201,33 @@ _try_generate_sprite_cloud() {
     return 1
   fi
 
+  mv "$tmp_file" "$OUTPUT_DIR/$filename"
+  echo "Saved: $OUTPUT_DIR/$filename"
+  return 0
+}
+
+_try_generate_sprite_hf() {
+  local prompt="$1"
+  [[ -z "${HUGGING_FACE:-}" ]] && return 1
+
+  echo "Generating sprite (cloud — HuggingFace FLUX.1-schnell): $prompt"
+  local tmp_file http_code
+  tmp_file="$(mktemp)"
+  http_code="$(curl -sS -X POST "$HF_SPRITE_API_URL" \
+    -H "Authorization: Bearer $HUGGING_FACE" \
+    -H "Content-Type: application/json" \
+    -d "$(jq -n --arg p "$prompt" '{inputs: $p}')" \
+    -o "$tmp_file" \
+    -w "%{http_code}")"
+
+  if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
+    local err; err="$(head -c 200 "$tmp_file")"; rm -f "$tmp_file"
+    echo "Cloud sprite (HF) failed (HTTP $http_code: $err) — will try local." >&2
+    return 1
+  fi
+
+  local filename
+  filename="$(build_filename sprite "$prompt" jpg)"
   mv "$tmp_file" "$OUTPUT_DIR/$filename"
   echo "Saved: $OUTPUT_DIR/$filename"
   return 0
@@ -287,7 +318,7 @@ _generate_sfx_local() {
   fi
 
   local filename
-  filename="$(build_filename sfx "$prompt" mp3)"
+  filename="$(build_filename sfx "$prompt" wav)"
   mv "$tmp_file" "$OUTPUT_DIR/$filename"
   echo "Saved: $OUTPUT_DIR/$filename"
 }
@@ -395,7 +426,7 @@ _generate_music_local() {
   fi
 
   local filename
-  filename="$(build_filename music "$prompt" mp3)"
+  filename="$(build_filename music "$prompt" wav)"
   mv "$tmp_file" "$OUTPUT_DIR/$filename"
   echo "Saved: $OUTPUT_DIR/$filename"
 }
