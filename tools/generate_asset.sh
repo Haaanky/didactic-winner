@@ -128,7 +128,7 @@ _generate_sprite_cloud() {
       model: "dall-e-3",
       prompt: $p,
       n: 1,
-      size: "256x256",
+      size: "1024x1024",
       response_format: "url"
     }')")"
 
@@ -136,9 +136,17 @@ _generate_sprite_cloud() {
   image_url="$(echo "$response" | jq -r '.data[0].url // empty')"
   [[ -z "$image_url" ]] && die "No image URL in response: $(echo "$response" | head -c 200)"
 
-  local filename
+  local filename tmp_file http_code
   filename="$(build_filename sprite "$prompt" png)"
-  curl -sS -o "$OUTPUT_DIR/$filename" "$image_url"
+  tmp_file="$(mktemp)"
+  http_code="$(curl -sS -o "$tmp_file" -w "%{http_code}" "$image_url")"
+
+  if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
+    rm -f "$tmp_file"
+    die "Image download returned HTTP $http_code"
+  fi
+
+  mv "$tmp_file" "$OUTPUT_DIR/$filename"
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
@@ -187,15 +195,23 @@ _generate_sfx_cloud() {
   [[ -z "${ELEVENLABS_API_KEY:-}" ]] && die "ELEVENLABS_API_KEY not set"
 
   echo "Generating SFX (cloud): $prompt"
-  local filename
-  filename="$(build_filename sfx "$prompt" mp3)"
-
-  curl -sS -X POST "$SFX_API_URL" \
+  local tmp_file http_code
+  tmp_file="$(mktemp)"
+  http_code="$(curl -sS -X POST "$SFX_API_URL" \
     -H "Content-Type: application/json" \
     -H "xi-api-key: $ELEVENLABS_API_KEY" \
     -d "$(jq -n --arg t "$prompt" '{text: $t, duration_seconds: null, prompt_influence: 0.3}')" \
-    -o "$OUTPUT_DIR/$filename"
+    -o "$tmp_file" \
+    -w "%{http_code}")"
 
+  if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
+    local err; err="$(cat "$tmp_file")"; rm -f "$tmp_file"
+    die "ElevenLabs API returned HTTP $http_code — $err"
+  fi
+
+  local filename
+  filename="$(build_filename sfx "$prompt" mp3)"
+  mv "$tmp_file" "$OUTPUT_DIR/$filename"
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
@@ -203,14 +219,22 @@ _generate_sfx_local() {
   local prompt="$1" url="$2"
 
   echo "Generating SFX (local — $url): $prompt"
-  local filename
-  filename="$(build_filename sfx "$prompt" mp3)"
-
-  curl -sS -X POST "$url" \
+  local tmp_file http_code
+  tmp_file="$(mktemp)"
+  http_code="$(curl -sS -X POST "$url" \
     -H "Content-Type: application/json" \
     -d "$(jq -n --arg t "$prompt" '{text: $t, duration: 5}')" \
-    -o "$OUTPUT_DIR/$filename"
+    -o "$tmp_file" \
+    -w "%{http_code}")"
 
+  if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
+    local err; err="$(cat "$tmp_file")"; rm -f "$tmp_file"
+    die "Local SFX server returned HTTP $http_code — $err"
+  fi
+
+  local filename
+  filename="$(build_filename sfx "$prompt" mp3)"
+  mv "$tmp_file" "$OUTPUT_DIR/$filename"
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
@@ -270,9 +294,17 @@ _generate_music_cloud() {
 
   [[ -z "$audio_url" ]] && die "Music generation timed out"
 
-  local filename
+  local filename tmp_file http_code
   filename="$(build_filename music "$prompt" mp3)"
-  curl -sS -o "$OUTPUT_DIR/$filename" "$audio_url"
+  tmp_file="$(mktemp)"
+  http_code="$(curl -sS -o "$tmp_file" -w "%{http_code}" "$audio_url")"
+
+  if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
+    rm -f "$tmp_file"
+    die "Music download returned HTTP $http_code"
+  fi
+
+  mv "$tmp_file" "$OUTPUT_DIR/$filename"
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
@@ -280,14 +312,22 @@ _generate_music_local() {
   local prompt="$1" url="$2"
 
   echo "Generating music (local — $url): $prompt"
-  local filename
-  filename="$(build_filename music "$prompt" mp3)"
-
-  curl -sS -X POST "$url" \
+  local tmp_file http_code
+  tmp_file="$(mktemp)"
+  http_code="$(curl -sS -X POST "$url" \
     -H "Content-Type: application/json" \
     -d "$(jq -n --arg t "$prompt" '{text: $t, duration: 30}')" \
-    -o "$OUTPUT_DIR/$filename"
+    -o "$tmp_file" \
+    -w "%{http_code}")"
 
+  if [[ "$http_code" -lt 200 || "$http_code" -ge 300 ]]; then
+    local err; err="$(cat "$tmp_file")"; rm -f "$tmp_file"
+    die "Local music server returned HTTP $http_code — $err"
+  fi
+
+  local filename
+  filename="$(build_filename music "$prompt" mp3)"
+  mv "$tmp_file" "$OUTPUT_DIR/$filename"
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
