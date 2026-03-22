@@ -604,9 +604,8 @@ Keys are read from OS environment variables. For convenience the CLI script also
 
 | Variable | Service | Used for |
 |----------|---------|----------|
-| `OPENAI_API_KEY` | OpenAI (DALL-E 3) | Sprite generation |
+| `HUGGING_FACE` | HuggingFace Inference API | Sprite (Stable Diffusion XL) and music (MusicGen) generation |
 | `ELEVENLABS_API_KEY` | ElevenLabs | SFX generation |
-| `REPLICATE_API_TOKEN` | Replicate (Suno) | Music generation |
 
 ### API Endpoints
 
@@ -614,10 +613,9 @@ These URLs are defined at the top of both `addons/ai_assets/ai_asset_dock.gd` an
 
 | Asset | Method | URL |
 |-------|--------|-----|
-| Sprite | `POST` | `https://api.openai.com/v1/images/generations` |
+| Sprite | `POST` | `https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0` |
 | SFX | `POST` | `https://api.elevenlabs.io/v1/sound-generation` |
-| Music (create) | `POST` | `https://api.replicate.com/v1/predictions` |
-| Music (poll) | `GET` | `https://api.replicate.com/v1/predictions/{id}` |
+| Music | `POST` | `https://api-inference.huggingface.co/models/facebook/musicgen-small` |
 
 ### Generated Files
 
