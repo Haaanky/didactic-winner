@@ -100,15 +100,13 @@ func test_save_bytes_creates_file() -> void:
 	file.close()
 	assert_eq(content, data)
 
-	# Clean up
 	DirAccess.remove_absolute(test_path)
 
 
 func test_save_bytes_creates_output_directory() -> void:
-	# Ensure dir exists (may already from previous runs)
 	var dir := DirAccess.open("res://")
 	if dir and dir.dir_exists("assets/generated"):
-		pass  # already exists, that's fine
+		pass
 	var test_path := "res://assets/generated/_test_dir_create.txt"
 	_dock._save_bytes(test_path, "x".to_utf8_buffer())
 	assert_true(FileAccess.file_exists(test_path))
@@ -161,8 +159,7 @@ func test_generate_with_whitespace_prompt_shows_error() -> void:
 
 # ── resolve_local_url ─────────────────────────────────────────────────────────
 
-func test_resolve_local_url_uses_env_override() -> void:
-	# This test requires no env override to be set for the key we use
+func test_resolve_local_url_uses_default_when_no_env() -> void:
 	var result: String = _dock._resolve_local_url(
 		"__TEST_NONEXISTENT_KEY__",
 		"http://localhost:9999/default"
@@ -170,46 +167,49 @@ func test_resolve_local_url_uses_env_override() -> void:
 	assert_eq(result, "http://localhost:9999/default")
 
 
-# ── local probe — FORCE_CLOUD_AI blocks local ─────────────────────────────────
+# ── cloud-first: no API key → _try methods return false ──────────────────────
 
-func test_local_reachable_returns_false_when_force_cloud_set() -> void:
-	# FORCE_CLOUD_AI=1 must always return false without attempting connection.
-	# We cannot set env vars at runtime in GDScript, so we test _local_reachable
-	# indirectly: when FORCE_CLOUD_AI is set in the environment the probe returns
-	# false and cloud APIs are used.  This test guards the documented contract.
-	#
-	# If FORCE_CLOUD_AI is already set in the test environment, probe must be false.
-	if not OS.get_environment("FORCE_CLOUD_AI").is_empty():
-		var result: bool = await _dock._local_reachable("http://localhost:7860")
-		assert_false(result, "FORCE_CLOUD_AI set — _local_reachable must return false")
-	else:
-		pass_test("FORCE_CLOUD_AI not set — skipping (integration environment needed)")
-
-
-# ── API key guard (cloud sprite) ─────────────────────────────────────────────
-
-func test_generate_sprite_cloud_without_key_shows_error() -> void:
+func test_try_generate_sprite_cloud_returns_false_without_key() -> void:
 	if not OS.get_environment("OPENAI_API_KEY").is_empty():
 		pass_test("OPENAI_API_KEY is set — skipping missing-key test")
 		return
-	_dock._prompt_edit.text = "test sprite"
-	_dock._type_option.select(0)
-	# Force cloud by making local unreachable (no server running in test env)
-	# and checking cloud API key gate.
-	await _dock._generate_sprite("test sprite")
-	assert_string_contains(_dock._status_label.text, "OPENAI_API_KEY")
-	assert_push_error_count(1)
+	var ok: bool = await _dock._try_generate_sprite_cloud("test sprite")
+	assert_false(ok, "_try_generate_sprite_cloud must return false when key is missing")
 
 
-# ── API key guard (cloud music) ──────────────────────────────────────────────
-
-func test_generate_music_cloud_without_key_shows_error() -> void:
+func test_try_generate_music_cloud_returns_false_without_key() -> void:
 	if not OS.get_environment("REPLICATE_API_TOKEN").is_empty():
 		pass_test("REPLICATE_API_TOKEN is set — skipping missing-key test")
 		return
-	await _dock._generate_music("test music")
-	assert_string_contains(_dock._status_label.text, "REPLICATE_API_TOKEN")
-	assert_push_error_count(1)
+	var ok: bool = await _dock._try_generate_music_cloud("test music")
+	assert_false(ok, "_try_generate_music_cloud must return false when key is missing")
+
+
+func test_try_generate_sfx_cloud_returns_false_without_key() -> void:
+	if not OS.get_environment("ELEVENLABS_API_KEY").is_empty():
+		pass_test("ELEVENLABS_API_KEY is set — skipping missing-key test")
+		return
+	var ok: bool = await _dock._try_generate_sfx_cloud("test sfx")
+	assert_false(ok, "_try_generate_sfx_cloud must return false when key is missing")
+
+
+# ── spin_up_server: missing start command returns false ───────────────────────
+
+func test_spin_up_server_returns_false_when_cmd_not_set() -> void:
+	var ok: bool = await _dock._spin_up_server("__NONEXISTENT_START_CMD__", "http://localhost:9999")
+	assert_false(ok, "_spin_up_server must return false when start cmd env var is not set")
+	assert_push_warning_count(1)
+
+
+# ── ensure_local_server: unreachable + no start cmd → empty string ────────────
+
+func test_ensure_local_server_returns_empty_when_unreachable_and_no_cmd() -> void:
+	var url: String = await _dock._ensure_local_server(
+		"__NONEXISTENT_URL_ENV__",
+		"http://localhost:19999/unreachable",
+		"__NONEXISTENT_START_CMD__"
+	)
+	assert_eq(url, "", "_ensure_local_server must return empty string when server cannot be reached or started")
 
 
 # ── set_status ───────────────────────────────────────────────────────────────
