@@ -1,24 +1,44 @@
 @tool
 extends VBoxContainer
-## Editor dock for generating game assets via AI APIs.
+## Editor dock for generating game assets via AI APIs and local AI servers.
 ##
-## API endpoints (keep in sync with tools/generate_asset.sh):
-##   Sprite : POST https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0
+## Cloud API endpoints (keep in sync with tools/generate_asset.sh):
+##   Sprite : POST https://api.openai.com/v1/images/generations
 ##   SFX    : POST https://api.elevenlabs.io/v1/sound-generation
-##   Music  : POST https://router.huggingface.co/hf-inference/models/facebook/musicgen-small
+##   Music  : POST https://api.replicate.com/v1/predictions
+##            GET  https://api.replicate.com/v1/predictions/{id}
+##
+## Local endpoints (keep in sync with tools/generate_asset.sh):
+##   Sprite : POST http://localhost:7860/sdapi/v1/txt2img  (AUTOMATIC1111)
+##            Override with LOCAL_SPRITE_URL env var.
+##   SFX    : POST http://localhost:8080/generate/sfx  (AudioCraft wrapper)
+##            Override with LOCAL_SFX_URL env var.
+##   Music  : POST http://localhost:8080/generate/music  (MusicGen wrapper)
+##            Override with LOCAL_MUSIC_URL env var.
 
 enum AssetType { SPRITE, SFX, MUSIC }
+enum Backend { CLOUD, LOCAL }
 
-const SPRITE_API_URL := "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
+const SPRITE_API_URL := "https://api.openai.com/v1/images/generations"
 const SFX_API_URL := "https://api.elevenlabs.io/v1/sound-generation"
-const MUSIC_API_URL := "https://router.huggingface.co/hf-inference/models/facebook/musicgen-small"
+const MUSIC_API_URL := "https://api.replicate.com/v1/predictions"
+
+const LOCAL_SPRITE_API_URL := "http://localhost:7860/sdapi/v1/txt2img"
+const LOCAL_SFX_API_URL := "http://localhost:8080/generate/sfx"
+const LOCAL_MUSIC_API_URL := "http://localhost:8080/generate/music"
 
 const OUTPUT_DIR := "res://assets/generated/"
 const TIMEOUT_MSEC := 30000
-const MUSIC_TIMEOUT_MSEC := 120000
+const MUSIC_POLL_INTERVAL_SEC := 3.0
+const MUSIC_POLL_MAX_ATTEMPTS := 20
 const SLUG_MAX_LENGTH := 32
 
+const LOCAL_SPRITE_RESOLUTION := 256
+const LOCAL_SPRITE_STEPS := 20
+const LOCAL_SPRITE_CFG_SCALE := 7.0
+
 @onready var _type_option: OptionButton = %TypeOption
+@onready var _backend_option: OptionButton = %BackendOption
 @onready var _prompt_edit: TextEdit = %PromptEdit
 @onready var _generate_button: Button = %GenerateButton
 @onready var _status_label: Label = %StatusLabel
@@ -28,7 +48,10 @@ func _ready() -> void:
 	_type_option.clear()
 	_type_option.add_item("Sprite (PNG)", AssetType.SPRITE)
 	_type_option.add_item("SFX (MP3)", AssetType.SFX)
-	_type_option.add_item("Music (FLAC)", AssetType.MUSIC)
+	_type_option.add_item("Music (MP3)", AssetType.MUSIC)
+	_backend_option.clear()
+	_backend_option.add_item("Cloud", Backend.CLOUD)
+	_backend_option.add_item("Local", Backend.LOCAL)
 	_generate_button.pressed.connect(_on_generate_pressed)
 
 
@@ -38,43 +61,129 @@ func _on_generate_pressed() -> void:
 		_set_status("Enter a prompt first.")
 		return
 	var asset_type: AssetType = _type_option.get_selected_id() as AssetType
+	var backend: Backend = _backend_option.get_selected_id() as Backend
 	_generate_button.disabled = true
 	_set_status("Generating...")
 	match asset_type:
 		AssetType.SPRITE:
-			await _generate_sprite(prompt_text)
+			if backend == Backend.LOCAL:
+				await _generate_sprite_local(prompt_text)
+			else:
+				await _generate_sprite(prompt_text)
 		AssetType.SFX:
-			await _generate_sfx(prompt_text)
+			if backend == Backend.LOCAL:
+				await _generate_sfx_local(prompt_text)
+			else:
+				await _generate_sfx(prompt_text)
 		AssetType.MUSIC:
-			await _generate_music(prompt_text)
+			if backend == Backend.LOCAL:
+				await _generate_music_local(prompt_text)
+			else:
+				await _generate_music(prompt_text)
 	_generate_button.disabled = false
 
 
 # ---------------------------------------------------------------------------
-# Sprite generation (HuggingFace Stable Diffusion XL)
+# Sprite generation — Cloud (OpenAI DALL-E)
 # ---------------------------------------------------------------------------
 
 func _generate_sprite(prompt_text: String) -> void:
-	var api_key := _get_env("HUGGING_FACE")
+	var api_key := _get_env("OPENAI_API_KEY")
 	if api_key.is_empty():
-		push_error("AIAssetDock: HUGGING_FACE environment variable not set")
-		_set_status("Error: HUGGING_FACE not set.")
+		push_error("AIAssetDock: OPENAI_API_KEY environment variable not set")
+		_set_status("Error: OPENAI_API_KEY not set.")
 		return
+
+	var body := {
+		"model": "dall-e-3",
+		"prompt": prompt_text,
+		"n": 1,
+		"size": "256x256",
+		"response_format": "url",
+	}
 
 	var result := await fetch_async(
 		SPRITE_API_URL,
 		PackedStringArray(["Content-Type: application/json", "Authorization: Bearer %s" % api_key]),
-		JSON.stringify({"inputs": prompt_text}),
+		JSON.stringify(body),
 	)
 	if result.is_empty():
 		return
 
+	var json: Dictionary = _parse_json(result["body"])
+	if json.is_empty():
+		return
+
+	if not json.has("data") or (json["data"] as Array).is_empty():
+		_set_status("Error: unexpected API response — no image data.")
+		return
+
+	var image_data: Dictionary = json["data"][0]
 	var file_path := _build_output_path("sprite", prompt_text, "png")
-	_save_bytes(file_path, result["body_raw"])
+
+	if image_data.has("b64_json"):
+		var image_bytes := Marshalls.base64_to_raw(image_data["b64_json"])
+		_save_bytes(file_path, image_bytes)
+	elif image_data.has("url"):
+		var download := await fetch_async(
+			image_data["url"],
+			PackedStringArray([]),
+			"",
+			HTTPClient.METHOD_GET,
+		)
+		if download.is_empty():
+			return
+		_save_bytes(file_path, download["body_raw"])
+	else:
+		_set_status("Error: no url or b64_json in response.")
 
 
 # ---------------------------------------------------------------------------
-# SFX generation (ElevenLabs)
+# Sprite generation — Local (AUTOMATIC1111 Stable Diffusion WebUI)
+#
+# Compatible server: https://github.com/AUTOMATIC1111/stable-diffusion-webui
+# Start with: ./webui.sh --api
+# Override endpoint with LOCAL_SPRITE_URL env var.
+# ---------------------------------------------------------------------------
+
+func _generate_sprite_local(prompt_text: String) -> void:
+	var url := _get_env("LOCAL_SPRITE_URL")
+	if url.is_empty():
+		url = LOCAL_SPRITE_API_URL
+
+	var body := {
+		"prompt": prompt_text,
+		"width": LOCAL_SPRITE_RESOLUTION,
+		"height": LOCAL_SPRITE_RESOLUTION,
+		"steps": LOCAL_SPRITE_STEPS,
+		"cfg_scale": LOCAL_SPRITE_CFG_SCALE,
+	}
+
+	var result := await fetch_async(
+		url,
+		PackedStringArray(["Content-Type: application/json"]),
+		JSON.stringify(body),
+	)
+	if result.is_empty():
+		return
+
+	var json: Dictionary = _parse_json(result["body"])
+	if json.is_empty():
+		return
+
+	if not json.has("images") or (json["images"] as Array).is_empty():
+		push_error("AIAssetDock: local sprite API returned no images — %s" % result["body"].left(200))
+		_set_status("Error: no images in local API response.")
+		return
+
+	var b64: String = json["images"][0]
+	var image_bytes := Marshalls.base64_to_raw(b64)
+	var file_path := _build_output_path("sprite", prompt_text, "png")
+	_save_bytes(file_path, image_bytes)
+
+
+# ---------------------------------------------------------------------------
+# SFX generation — Cloud (ElevenLabs)
 # ---------------------------------------------------------------------------
 
 func _generate_sfx(prompt_text: String) -> void:
@@ -103,29 +212,147 @@ func _generate_sfx(prompt_text: String) -> void:
 
 
 # ---------------------------------------------------------------------------
-# Music generation (HuggingFace MusicGen)
+# SFX generation — Local (AudioCraft wrapper)
+#
+# Compatible server: simple FastAPI/Flask wrapper around Meta AudioCraft.
+# Expected request : POST /generate/sfx  {"text": "...", "duration": 5}
+# Expected response: raw MP3 bytes (Content-Type: audio/mpeg)
+# Override endpoint with LOCAL_SFX_URL env var.
 # ---------------------------------------------------------------------------
 
-func _generate_music(prompt_text: String) -> void:
-	var api_key := _get_env("HUGGING_FACE")
-	if api_key.is_empty():
-		push_error("AIAssetDock: HUGGING_FACE environment variable not set")
-		_set_status("Error: HUGGING_FACE not set.")
-		return
+func _generate_sfx_local(prompt_text: String) -> void:
+	var url := _get_env("LOCAL_SFX_URL")
+	if url.is_empty():
+		url = LOCAL_SFX_API_URL
 
-	_set_status("Generating music — this may take up to a minute...")
+	var body := {
+		"text": prompt_text,
+		"duration": 5,
+	}
+
 	var result := await fetch_async(
-		MUSIC_API_URL,
-		PackedStringArray(["Content-Type: application/json", "Authorization: Bearer %s" % api_key]),
-		JSON.stringify({"inputs": prompt_text}),
-		HTTPClient.METHOD_POST,
-		MUSIC_TIMEOUT_MSEC,
+		url,
+		PackedStringArray(["Content-Type: application/json"]),
+		JSON.stringify(body),
 	)
 	if result.is_empty():
 		return
 
-	var file_path := _build_output_path("music", prompt_text, "flac")
+	var file_path := _build_output_path("sfx", prompt_text, "mp3")
 	_save_bytes(file_path, result["body_raw"])
+
+
+# ---------------------------------------------------------------------------
+# Music generation — Cloud (Suno via Replicate)
+# ---------------------------------------------------------------------------
+
+func _generate_music(prompt_text: String) -> void:
+	var api_key := _get_env("REPLICATE_API_TOKEN")
+	if api_key.is_empty():
+		push_error("AIAssetDock: REPLICATE_API_TOKEN environment variable not set")
+		_set_status("Error: REPLICATE_API_TOKEN not set.")
+		return
+
+	var body := {
+		"version": "7a76a8258b23fae65c5a22debb8841d1d7e816b75c2f24218cd2bd8573787906",
+		"input": {
+			"prompt": prompt_text,
+			"model_version": "chirp-v3-5",
+			"duration": 30,
+		},
+	}
+
+	var headers := PackedStringArray([
+		"Content-Type: application/json",
+		"Authorization: Bearer %s" % api_key,
+	])
+
+	var result := await fetch_async(MUSIC_API_URL, headers, JSON.stringify(body))
+	if result.is_empty():
+		return
+
+	var json: Dictionary = _parse_json(result["body"])
+	if json.is_empty():
+		return
+
+	if not json.has("urls") or not (json["urls"] as Dictionary).has("get"):
+		_set_status("Error: unexpected Replicate response — no poll URL.")
+		return
+
+	var poll_url: String = json["urls"]["get"]
+	_set_status("Music generation started. Polling for result...")
+
+	var audio_url := await _poll_replicate(poll_url, headers)
+	if audio_url.is_empty():
+		return
+
+	var audio_result := await fetch_async(audio_url, PackedStringArray([]), "", HTTPClient.METHOD_GET)
+	if audio_result.is_empty():
+		return
+
+	var file_path := _build_output_path("music", prompt_text, "mp3")
+	_save_bytes(file_path, audio_result["body_raw"])
+
+
+# ---------------------------------------------------------------------------
+# Music generation — Local (MusicGen via AudioCraft wrapper)
+#
+# Compatible server: simple FastAPI/Flask wrapper around Meta MusicGen.
+# Expected request : POST /generate/music  {"text": "...", "duration": 30}
+# Expected response: raw MP3 bytes (Content-Type: audio/mpeg)
+# Override endpoint with LOCAL_MUSIC_URL env var.
+# ---------------------------------------------------------------------------
+
+func _generate_music_local(prompt_text: String) -> void:
+	var url := _get_env("LOCAL_MUSIC_URL")
+	if url.is_empty():
+		url = LOCAL_MUSIC_API_URL
+
+	var body := {
+		"text": prompt_text,
+		"duration": 30,
+	}
+
+	var result := await fetch_async(
+		url,
+		PackedStringArray(["Content-Type: application/json"]),
+		JSON.stringify(body),
+	)
+	if result.is_empty():
+		return
+
+	var file_path := _build_output_path("music", prompt_text, "mp3")
+	_save_bytes(file_path, result["body_raw"])
+
+
+func _poll_replicate(poll_url: String, headers: PackedStringArray) -> String:
+	for i: int in range(MUSIC_POLL_MAX_ATTEMPTS):
+		await get_tree().create_timer(MUSIC_POLL_INTERVAL_SEC).timeout
+		_set_status("Polling attempt %d / %d..." % [i + 1, MUSIC_POLL_MAX_ATTEMPTS])
+
+		var result := await fetch_async(poll_url, headers, "", HTTPClient.METHOD_GET)
+		if result.is_empty():
+			return ""
+
+		var json: Dictionary = _parse_json(result["body"])
+		if json.is_empty():
+			return ""
+
+		var status: String = json.get("status", "")
+		if status == "succeeded":
+			var output = json.get("output", null)
+			if output is String:
+				return output
+			if output is Array and not (output as Array).is_empty():
+				return output[0]
+			_set_status("Error: succeeded but no output URL found.")
+			return ""
+		elif status == "failed" or status == "canceled":
+			_set_status("Error: Replicate prediction %s." % status)
+			return ""
+
+	_set_status("Error: music generation timed out after polling.")
+	return ""
 
 
 # ---------------------------------------------------------------------------
@@ -137,7 +364,6 @@ func fetch_async(
 	headers: PackedStringArray,
 	body: String,
 	method: int = HTTPClient.METHOD_POST,
-	timeout_msec: int = TIMEOUT_MSEC,
 ) -> Dictionary:
 	var http := HTTPClient.new()
 	var parsed := _parse_url(url)
@@ -148,7 +374,7 @@ func fetch_async(
 		_set_status("Error: could not connect (code %d)." % err)
 		return {}
 
-	var deadline := Time.get_ticks_msec() + timeout_msec
+	var deadline := Time.get_ticks_msec() + TIMEOUT_MSEC
 
 	while http.get_status() == HTTPClient.STATUS_CONNECTING or http.get_status() == HTTPClient.STATUS_RESOLVING:
 		http.poll()
@@ -238,7 +464,7 @@ func _parse_url(url: String) -> Dictionary:
 
 
 func _get_env(key: String) -> String:
-	return OS.get_environment(key).trim_suffix(";")
+	return OS.get_environment(key)
 
 
 func _parse_json(text: String) -> Dictionary:

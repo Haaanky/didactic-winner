@@ -19,6 +19,12 @@ text = "Asset Type:"
 [node name="TypeOption" type="OptionButton" parent="."]
 unique_name_in_owner = true
 
+[node name="BackendLabel" type="Label" parent="."]
+text = "Backend:"
+
+[node name="BackendOption" type="OptionButton" parent="."]
+unique_name_in_owner = true
+
 [node name="PromptLabel" type="Label" parent="."]
 text = "Prompt:"
 
