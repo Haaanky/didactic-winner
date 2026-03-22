@@ -115,7 +115,7 @@ func test_save_bytes_creates_output_directory() -> void:
 	DirAccess.remove_absolute(test_path)
 
 
-# ── UI wiring ────────────────────────────────────────────────────────────────
+# ── UI wiring — TypeOption ────────────────────────────────────────────────────
 
 func test_type_option_has_three_items() -> void:
 	assert_eq(_dock._type_option.item_count, 3)
@@ -130,8 +130,28 @@ func test_type_option_sfx_is_second() -> void:
 
 
 func test_type_option_music_is_third() -> void:
-	assert_eq(_dock._type_option.get_item_text(2), "Music (FLAC)")
+	assert_eq(_dock._type_option.get_item_text(2), "Music (MP3)")
 
+
+# ── UI wiring — BackendOption ─────────────────────────────────────────────────
+
+func test_backend_option_has_two_items() -> void:
+	assert_eq(_dock._backend_option.item_count, 2)
+
+
+func test_backend_option_cloud_is_first() -> void:
+	assert_eq(_dock._backend_option.get_item_text(0), "Cloud")
+
+
+func test_backend_option_local_is_second() -> void:
+	assert_eq(_dock._backend_option.get_item_text(1), "Local")
+
+
+func test_backend_option_defaults_to_cloud() -> void:
+	assert_eq(_dock._backend_option.selected, 0)
+
+
+# ── UI wiring — other nodes ───────────────────────────────────────────────────
 
 func test_generate_button_exists() -> void:
 	assert_not_null(_dock._generate_button)
@@ -159,31 +179,69 @@ func test_generate_with_whitespace_prompt_shows_error() -> void:
 	assert_eq(_dock._status_label.text, "Enter a prompt first.")
 
 
-# ── API key guard (sprite) ───────────────────────────────────────────────────
+# ── API key guard (sprite — cloud) ───────────────────────────────────────────
 
-func test_generate_sprite_without_key_shows_error() -> void:
-	if not OS.get_environment("HUGGING_FACE").is_empty():
-		pass_test("HUGGING_FACE is set — skipping missing-key test")
+func test_generate_sprite_cloud_without_key_shows_error() -> void:
+	if not OS.get_environment("OPENAI_API_KEY").is_empty():
+		pass_test("OPENAI_API_KEY is set — skipping missing-key test")
 		return
 	_dock._prompt_edit.text = "test sprite"
 	_dock._type_option.select(0)
+	_dock._backend_option.select(0)
 	_dock._on_generate_pressed()
 	await get_tree().process_frame
-	assert_string_contains(_dock._status_label.text, "HUGGING_FACE")
+	assert_string_contains(_dock._status_label.text, "OPENAI_API_KEY")
 	assert_push_error_count(1)
 
 
-# ── API key guard (music) ───────────────────────────────────────────────────
+# ── local sprite — no API key required ───────────────────────────────────────
 
-func test_generate_music_without_key_shows_error() -> void:
-	if not OS.get_environment("HUGGING_FACE").is_empty():
-		pass_test("HUGGING_FACE is set — skipping missing-key test")
+func test_generate_sprite_local_does_not_require_openai_key() -> void:
+	# Local backend must not gate on OPENAI_API_KEY.
+	# It will fail trying to connect to localhost, but the error must NOT
+	# mention OPENAI_API_KEY.
+	_dock._prompt_edit.text = "test local sprite"
+	_dock._type_option.select(0)
+	_dock._backend_option.select(1)
+	_dock._on_generate_pressed()
+	await get_tree().process_frame
+	assert_string_does_not_contain(_dock._status_label.text, "OPENAI_API_KEY")
+
+
+# ── local SFX — no API key required ──────────────────────────────────────────
+
+func test_generate_sfx_local_does_not_require_elevenlabs_key() -> void:
+	_dock._prompt_edit.text = "test local sfx"
+	_dock._type_option.select(1)
+	_dock._backend_option.select(1)
+	_dock._on_generate_pressed()
+	await get_tree().process_frame
+	assert_string_does_not_contain(_dock._status_label.text, "ELEVENLABS_API_KEY")
+
+
+# ── local music — no API key required ────────────────────────────────────────
+
+func test_generate_music_local_does_not_require_replicate_key() -> void:
+	_dock._prompt_edit.text = "test local music"
+	_dock._type_option.select(2)
+	_dock._backend_option.select(1)
+	_dock._on_generate_pressed()
+	await get_tree().process_frame
+	assert_string_does_not_contain(_dock._status_label.text, "REPLICATE_API_TOKEN")
+
+
+# ── API key guard (music — cloud) ────────────────────────────────────────────
+
+func test_generate_music_cloud_without_key_shows_error() -> void:
+	if not OS.get_environment("REPLICATE_API_TOKEN").is_empty():
+		pass_test("REPLICATE_API_TOKEN is set — skipping missing-key test")
 		return
 	_dock._prompt_edit.text = "test music"
 	_dock._type_option.select(2)
+	_dock._backend_option.select(0)
 	_dock._on_generate_pressed()
 	await get_tree().process_frame
-	assert_string_contains(_dock._status_label.text, "HUGGING_FACE")
+	assert_string_contains(_dock._status_label.text, "REPLICATE_API_TOKEN")
 	assert_push_error_count(1)
 
 
