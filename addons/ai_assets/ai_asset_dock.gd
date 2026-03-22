@@ -527,7 +527,7 @@ func fetch_async(
 # ---------------------------------------------------------------------------
 
 func _parse_url(url: String) -> Dictionary:
-	var tls := url.begins_with("https://")
+	var use_tls := url.begins_with("https://")
 	var stripped := url.replace("https://", "").replace("http://", "")
 	var slash_idx := stripped.find("/")
 	var host: String
@@ -538,12 +538,13 @@ func _parse_url(url: String) -> Dictionary:
 	else:
 		host = stripped
 		path = "/"
-	var port := 443 if tls else 80
+	var port := 443 if use_tls else 80
 	var colon_idx := host.find(":")
 	if colon_idx >= 0:
 		port = host.substr(colon_idx + 1).to_int()
 		host = host.left(colon_idx)
-	return {"host": host, "port": port, "path": path, "tls": tls}
+	var tls_options: TLSOptions = TLSOptions.client() if use_tls else null
+	return {"host": host, "port": port, "path": path, "tls": tls_options}
 
 
 func _get_env(key: String) -> String:

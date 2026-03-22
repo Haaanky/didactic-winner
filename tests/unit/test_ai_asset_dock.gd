@@ -224,6 +224,7 @@ func test_ensure_local_server_returns_empty_when_unreachable_and_no_cmd() -> voi
 		"__NONEXISTENT_START_CMD__"
 	)
 	assert_eq(url, "", "_ensure_local_server must return empty string when server cannot be reached or started")
+	assert_push_error_count(1)
 
 
 # ── set_status ───────────────────────────────────────────────────────────────
