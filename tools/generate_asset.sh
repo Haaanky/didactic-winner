@@ -39,6 +39,10 @@ if [[ -f "$PROJECT_ROOT/.env" ]]; then
   set +a
 fi
 
+# Strip trailing semicolons that Claude Code may append to env var values
+HUGGING_FACE="${HUGGING_FACE%;}"
+ELEVENLABS_API_KEY="${ELEVENLABS_API_KEY%;}"
+
 slugify() {
   echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g' | sed 's/__*/_/g' | sed 's/^_//;s/_$//' | cut -c1-32
 }
