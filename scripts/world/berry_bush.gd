@@ -14,6 +14,7 @@ const BASE_YIELD_MIN: int = 2
 const BASE_YIELD_MAX: int = 5
 const REGROW_HOURS: int = 48
 const XP_PER_HARVEST: float = 8.0
+const DEPLETED_MODULATE: Color = Color(0.5, 0.4, 0.3, 1.0)
 
 @export var bush_sprite: Sprite2D
 @export var interact_area: StaticBody2D
@@ -66,7 +67,7 @@ func _harvest(player: PlayerController) -> void:
 func _update_visuals() -> void:
 	if bush_sprite == null:
 		return
-	bush_sprite.modulate = Color.WHITE if has_berries else Color(0.5, 0.4, 0.3, 1.0)
+	bush_sprite.modulate = Color.WHITE if has_berries else DEPLETED_MODULATE
 
 
 func _on_hour_passed(_hour: int) -> void:

@@ -16,6 +16,8 @@ const WANDER_RADIUS: float = 280.0
 const FLEE_RADIUS: float = 180.0
 const STOP_FLEE_RADIUS: float = 300.0
 const XP_PER_HUNT: float = 20.0
+const DEAD_MODULATE: Color = Color(0.5, 0.35, 0.25, 0.85)
+const DEAD_ROTATION: float = 1.5
 
 enum DeerState { IDLE, WANDERING, FLEEING, DEAD }
 
@@ -133,5 +135,5 @@ func _harvest(player: PlayerController) -> void:
 	)
 	deer_harvested.emit(global_position)
 	if deer_sprite != null:
-		deer_sprite.modulate = Color(0.5, 0.35, 0.25, 0.85)
-		deer_sprite.rotation = 1.5
+		deer_sprite.modulate = DEAD_MODULATE
+		deer_sprite.rotation = DEAD_ROTATION

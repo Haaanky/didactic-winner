@@ -20,6 +20,7 @@ const SFX_FOOTSTEP_SNOW: String = "res://assets/audio/footstep_snow.wav"
 const SFX_FOOTSTEP_GRASS: String = "res://assets/audio/footstep_grass.wav"
 
 const CROSSFADE_DURATION: float = 2.0
+const VOLUME_SILENT_DB: float = -80.0
 
 var _music_player_a: AudioStreamPlayer
 var _music_player_b: AudioStreamPlayer
@@ -118,17 +119,15 @@ func _play_contextual_music() -> void:
 	_crossfade_to(stream)
 
 
-const _VOLUME_SILENT_DB: float = -80.0
-
 func _crossfade_to(stream: AudioStream) -> void:
 	if _crossfade_tween and _crossfade_tween.is_valid():
 		_crossfade_tween.kill()
 	_inactive_player.stream = stream
-	_inactive_player.volume_db = _VOLUME_SILENT_DB
+	_inactive_player.volume_db = VOLUME_SILENT_DB
 	_inactive_player.play()
 	_crossfade_tween = create_tween()
 	_crossfade_tween.set_parallel(true)
-	_crossfade_tween.tween_property(_active_player, "volume_db", _VOLUME_SILENT_DB, CROSSFADE_DURATION)
+	_crossfade_tween.tween_property(_active_player, "volume_db", VOLUME_SILENT_DB, CROSSFADE_DURATION)
 	_crossfade_tween.tween_property(_inactive_player, "volume_db", 0.0, CROSSFADE_DURATION)
 	_crossfade_tween.set_parallel(false)
 	_crossfade_tween.tween_callback(_swap_players)
