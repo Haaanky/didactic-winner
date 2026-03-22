@@ -2,10 +2,9 @@
 # generate_asset.sh — CLI batch asset generator for Dudes in Alaska
 #
 # API endpoints (keep in sync with addons/ai_assets/ai_asset_dock.gd):
-#   Sprite : POST https://api.openai.com/v1/images/generations
+#   Sprite : POST https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0
 #   SFX    : POST https://api.elevenlabs.io/v1/sound-generation
-#   Music  : POST https://api.replicate.com/v1/predictions
-#            GET  https://api.replicate.com/v1/predictions/{id}
+#   Music  : POST https://router.huggingface.co/hf-inference/models/facebook/musicgen-small
 #
 # Usage (positional arguments):
 #   ./tools/generate_asset.sh sprite "a pixel-art campfire in Alaska"
@@ -19,9 +18,8 @@
 #   { "type": "sprite|sfx|music", "prompt": "description text" }
 #
 # Environment variables (or .env file in project root):
-#   OPENAI_API_KEY       — required for sprite generation
+#   HUGGING_FACE         — required for sprite and music generation
 #   ELEVENLABS_API_KEY   — required for SFX generation
-#   REPLICATE_API_TOKEN  — required for music generation
 
 set -euo pipefail
 
@@ -29,12 +27,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 OUTPUT_DIR="$PROJECT_ROOT/assets/generated"
 
-SPRITE_API_URL="https://api.openai.com/v1/images/generations"
+SPRITE_API_URL="https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
 SFX_API_URL="https://api.elevenlabs.io/v1/sound-generation"
-MUSIC_API_URL="https://api.replicate.com/v1/predictions"
-
-MUSIC_POLL_INTERVAL=3
-MUSIC_POLL_MAX_ATTEMPTS=20
+MUSIC_API_URL="https://router.huggingface.co/hf-inference/models/facebook/musicgen-small"
 
 # Load .env if it exists
 if [[ -f "$PROJECT_ROOT/.env" ]]; then
@@ -66,32 +61,22 @@ die() {
 
 mkdir -p "$OUTPUT_DIR"
 
-# ---- Sprite (OpenAI DALL-E) ----
+# ---- Sprite (HuggingFace Stable Diffusion XL) ----
 
 generate_sprite() {
   local prompt="$1"
-  [[ -z "${OPENAI_API_KEY:-}" ]] && die "OPENAI_API_KEY not set"
+  [[ -z "${HUGGING_FACE:-}" ]] && die "HUGGING_FACE not set"
 
   echo "Generating sprite: $prompt"
-  local response
-  response="$(curl -sS -X POST "$SPRITE_API_URL" \
-    -H "Content-Type: application/json" \
-    -H "Authorization: Bearer $OPENAI_API_KEY" \
-    -d "$(jq -n --arg p "$prompt" '{
-      model: "dall-e-3",
-      prompt: $p,
-      n: 1,
-      size: "256x256",
-      response_format: "url"
-    }')")"
-
-  local image_url
-  image_url="$(echo "$response" | jq -r '.data[0].url // empty')"
-  [[ -z "$image_url" ]] && die "No image URL in response: $(echo "$response" | head -c 200)"
-
   local filename
   filename="$(build_filename sprite "$prompt" png)"
-  curl -sS -o "$OUTPUT_DIR/$filename" "$image_url"
+
+  curl -sS -X POST "$SPRITE_API_URL" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $HUGGING_FACE" \
+    -d "$(jq -n --arg p "$prompt" '{"inputs": $p}')" \
+    -o "$OUTPUT_DIR/$filename"
+
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
@@ -114,52 +99,23 @@ generate_sfx() {
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
-# ---- Music (Suno via Replicate) ----
+# ---- Music (HuggingFace MusicGen) ----
 
 generate_music() {
   local prompt="$1"
-  [[ -z "${REPLICATE_API_TOKEN:-}" ]] && die "REPLICATE_API_TOKEN not set"
+  [[ -z "${HUGGING_FACE:-}" ]] && die "HUGGING_FACE not set"
 
-  echo "Generating music: $prompt"
-  local response
-  response="$(curl -sS -X POST "$MUSIC_API_URL" \
-    -H "Content-Type: application/json" \
-    -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
-    -d "$(jq -n --arg p "$prompt" '{
-      version: "7a76a8258b23fae65c5a22debb8841d1d7e816b75c2f24218cd2bd8573787906",
-      input: {prompt: $p, model_version: "chirp-v3-5", duration: 30}
-    }')")"
-
-  local poll_url
-  poll_url="$(echo "$response" | jq -r '.urls.get // empty')"
-  [[ -z "$poll_url" ]] && die "No poll URL in response: $(echo "$response" | head -c 200)"
-
-  echo "Polling for music result..."
-  local audio_url=""
-  for i in $(seq 1 $MUSIC_POLL_MAX_ATTEMPTS); do
-    sleep $MUSIC_POLL_INTERVAL
-    local poll_result
-    poll_result="$(curl -sS "$poll_url" \
-      -H "Authorization: Bearer $REPLICATE_API_TOKEN")"
-
-    local status
-    status="$(echo "$poll_result" | jq -r '.status // empty')"
-
-    echo "  Poll $i/$MUSIC_POLL_MAX_ATTEMPTS — status: $status"
-
-    if [[ "$status" == "succeeded" ]]; then
-      audio_url="$(echo "$poll_result" | jq -r 'if .output | type == "string" then .output elif .output | type == "array" then .output[0] else empty end')"
-      break
-    elif [[ "$status" == "failed" || "$status" == "canceled" ]]; then
-      die "Replicate prediction $status"
-    fi
-  done
-
-  [[ -z "$audio_url" ]] && die "Music generation timed out"
-
+  echo "Generating music (this may take up to a minute): $prompt"
   local filename
-  filename="$(build_filename music "$prompt" mp3)"
-  curl -sS -o "$OUTPUT_DIR/$filename" "$audio_url"
+  filename="$(build_filename music "$prompt" flac)"
+
+  curl -sS -X POST "$MUSIC_API_URL" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $HUGGING_FACE" \
+    -d "$(jq -n --arg p "$prompt" '{"inputs": $p}')" \
+    --max-time 120 \
+    -o "$OUTPUT_DIR/$filename"
+
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 

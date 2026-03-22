@@ -3,21 +3,19 @@ extends VBoxContainer
 ## Editor dock for generating game assets via AI APIs.
 ##
 ## API endpoints (keep in sync with tools/generate_asset.sh):
-##   Sprite : POST https://api.openai.com/v1/images/generations
+##   Sprite : POST https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0
 ##   SFX    : POST https://api.elevenlabs.io/v1/sound-generation
-##   Music  : POST https://api.replicate.com/v1/predictions
-##            GET  https://api.replicate.com/v1/predictions/{id}
+##   Music  : POST https://router.huggingface.co/hf-inference/models/facebook/musicgen-small
 
 enum AssetType { SPRITE, SFX, MUSIC }
 
-const SPRITE_API_URL := "https://api.openai.com/v1/images/generations"
+const SPRITE_API_URL := "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
 const SFX_API_URL := "https://api.elevenlabs.io/v1/sound-generation"
-const MUSIC_API_URL := "https://api.replicate.com/v1/predictions"
+const MUSIC_API_URL := "https://router.huggingface.co/hf-inference/models/facebook/musicgen-small"
 
 const OUTPUT_DIR := "res://assets/generated/"
 const TIMEOUT_MSEC := 30000
-const MUSIC_POLL_INTERVAL_SEC := 3.0
-const MUSIC_POLL_MAX_ATTEMPTS := 20
+const MUSIC_TIMEOUT_MSEC := 120000
 const SLUG_MAX_LENGTH := 32
 
 @onready var _type_option: OptionButton = %TypeOption
@@ -30,7 +28,7 @@ func _ready() -> void:
 	_type_option.clear()
 	_type_option.add_item("Sprite (PNG)", AssetType.SPRITE)
 	_type_option.add_item("SFX (MP3)", AssetType.SFX)
-	_type_option.add_item("Music (MP3)", AssetType.MUSIC)
+	_type_option.add_item("Music (FLAC)", AssetType.MUSIC)
 	_generate_button.pressed.connect(_on_generate_pressed)
 
 
@@ -53,58 +51,26 @@ func _on_generate_pressed() -> void:
 
 
 # ---------------------------------------------------------------------------
-# Sprite generation (OpenAI DALL-E)
+# Sprite generation (HuggingFace Stable Diffusion XL)
 # ---------------------------------------------------------------------------
 
 func _generate_sprite(prompt_text: String) -> void:
-	var api_key := _get_env("OPENAI_API_KEY")
+	var api_key := _get_env("HUGGING_FACE")
 	if api_key.is_empty():
-		push_error("AIAssetDock: OPENAI_API_KEY environment variable not set")
-		_set_status("Error: OPENAI_API_KEY not set.")
+		push_error("AIAssetDock: HUGGING_FACE environment variable not set")
+		_set_status("Error: HUGGING_FACE not set.")
 		return
-
-	var body := {
-		"model": "dall-e-3",
-		"prompt": prompt_text,
-		"n": 1,
-		"size": "256x256",
-		"response_format": "url",
-	}
 
 	var result := await fetch_async(
 		SPRITE_API_URL,
 		PackedStringArray(["Content-Type: application/json", "Authorization: Bearer %s" % api_key]),
-		JSON.stringify(body),
+		JSON.stringify({"inputs": prompt_text}),
 	)
 	if result.is_empty():
 		return
 
-	var json: Dictionary = _parse_json(result["body"])
-	if json.is_empty():
-		return
-
-	if not json.has("data") or (json["data"] as Array).is_empty():
-		_set_status("Error: unexpected API response — no image data.")
-		return
-
-	var image_data: Dictionary = json["data"][0]
 	var file_path := _build_output_path("sprite", prompt_text, "png")
-
-	if image_data.has("b64_json"):
-		var image_bytes := Marshalls.base64_to_raw(image_data["b64_json"])
-		_save_bytes(file_path, image_bytes)
-	elif image_data.has("url"):
-		var download := await fetch_async(
-			image_data["url"],
-			PackedStringArray([]),
-			"",
-			HTTPClient.METHOD_GET,
-		)
-		if download.is_empty():
-			return
-		_save_bytes(file_path, download["body_raw"])
-	else:
-		_set_status("Error: no url or b64_json in response.")
+	_save_bytes(file_path, result["body_raw"])
 
 
 # ---------------------------------------------------------------------------
@@ -137,85 +103,29 @@ func _generate_sfx(prompt_text: String) -> void:
 
 
 # ---------------------------------------------------------------------------
-# Music generation (Suno via Replicate)
+# Music generation (HuggingFace MusicGen)
 # ---------------------------------------------------------------------------
 
 func _generate_music(prompt_text: String) -> void:
-	var api_key := _get_env("REPLICATE_API_TOKEN")
+	var api_key := _get_env("HUGGING_FACE")
 	if api_key.is_empty():
-		push_error("AIAssetDock: REPLICATE_API_TOKEN environment variable not set")
-		_set_status("Error: REPLICATE_API_TOKEN not set.")
+		push_error("AIAssetDock: HUGGING_FACE environment variable not set")
+		_set_status("Error: HUGGING_FACE not set.")
 		return
 
-	var body := {
-		"version": "7a76a8258b23fae65c5a22debb8841d1d7e816b75c2f24218cd2bd8573787906",
-		"input": {
-			"prompt": prompt_text,
-			"model_version": "chirp-v3-5",
-			"duration": 30,
-		},
-	}
-
-	var headers := PackedStringArray([
-		"Content-Type: application/json",
-		"Authorization: Bearer %s" % api_key,
-	])
-
-	var result := await fetch_async(MUSIC_API_URL, headers, JSON.stringify(body))
+	_set_status("Generating music — this may take up to a minute...")
+	var result := await fetch_async(
+		MUSIC_API_URL,
+		PackedStringArray(["Content-Type: application/json", "Authorization: Bearer %s" % api_key]),
+		JSON.stringify({"inputs": prompt_text}),
+		HTTPClient.METHOD_POST,
+		MUSIC_TIMEOUT_MSEC,
+	)
 	if result.is_empty():
 		return
 
-	var json: Dictionary = _parse_json(result["body"])
-	if json.is_empty():
-		return
-
-	if not json.has("urls") or not (json["urls"] as Dictionary).has("get"):
-		_set_status("Error: unexpected Replicate response — no poll URL.")
-		return
-
-	var poll_url: String = json["urls"]["get"]
-	_set_status("Music generation started. Polling for result...")
-
-	var audio_url := await _poll_replicate(poll_url, headers)
-	if audio_url.is_empty():
-		return
-
-	var audio_result := await fetch_async(audio_url, PackedStringArray([]), "", HTTPClient.METHOD_GET)
-	if audio_result.is_empty():
-		return
-
-	var file_path := _build_output_path("music", prompt_text, "mp3")
-	_save_bytes(file_path, audio_result["body_raw"])
-
-
-func _poll_replicate(poll_url: String, headers: PackedStringArray) -> String:
-	for i: int in range(MUSIC_POLL_MAX_ATTEMPTS):
-		await get_tree().create_timer(MUSIC_POLL_INTERVAL_SEC).timeout
-		_set_status("Polling attempt %d / %d..." % [i + 1, MUSIC_POLL_MAX_ATTEMPTS])
-
-		var result := await fetch_async(poll_url, headers, "", HTTPClient.METHOD_GET)
-		if result.is_empty():
-			return ""
-
-		var json: Dictionary = _parse_json(result["body"])
-		if json.is_empty():
-			return ""
-
-		var status: String = json.get("status", "")
-		if status == "succeeded":
-			var output = json.get("output", null)
-			if output is String:
-				return output
-			if output is Array and not (output as Array).is_empty():
-				return output[0]
-			_set_status("Error: succeeded but no output URL found.")
-			return ""
-		elif status == "failed" or status == "canceled":
-			_set_status("Error: Replicate prediction %s." % status)
-			return ""
-
-	_set_status("Error: music generation timed out after polling.")
-	return ""
+	var file_path := _build_output_path("music", prompt_text, "flac")
+	_save_bytes(file_path, result["body_raw"])
 
 
 # ---------------------------------------------------------------------------
@@ -227,6 +137,7 @@ func fetch_async(
 	headers: PackedStringArray,
 	body: String,
 	method: int = HTTPClient.METHOD_POST,
+	timeout_msec: int = TIMEOUT_MSEC,
 ) -> Dictionary:
 	var http := HTTPClient.new()
 	var parsed := _parse_url(url)
@@ -237,7 +148,7 @@ func fetch_async(
 		_set_status("Error: could not connect (code %d)." % err)
 		return {}
 
-	var deadline := Time.get_ticks_msec() + TIMEOUT_MSEC
+	var deadline := Time.get_ticks_msec() + timeout_msec
 
 	while http.get_status() == HTTPClient.STATUS_CONNECTING or http.get_status() == HTTPClient.STATUS_RESOLVING:
 		http.poll()
