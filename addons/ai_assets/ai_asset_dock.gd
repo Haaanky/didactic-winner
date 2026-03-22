@@ -3,7 +3,8 @@ extends VBoxContainer
 ## Editor dock for generating game assets via AI APIs and local AI servers.
 ##
 ## Cloud API endpoints (keep in sync with tools/generate_asset.sh):
-##   Sprite : POST https://api.openai.com/v1/images/generations
+##   Sprite : POST https://api.openai.com/v1/images/generations          (OPENAI_API_KEY, tried first)
+##          : POST https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell  (HUGGING_FACE)
 ##   SFX    : POST https://api.elevenlabs.io/v1/sound-generation
 ##   Music  : POST https://api.replicate.com/v1/predictions
 ##            GET  https://api.replicate.com/v1/predictions/{id}
@@ -26,6 +27,7 @@ extends VBoxContainer
 enum AssetType { SPRITE, SFX, MUSIC }
 
 const SPRITE_API_URL := "https://api.openai.com/v1/images/generations"
+const HF_SPRITE_API_URL := "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
 const SFX_API_URL := "https://api.elevenlabs.io/v1/sound-generation"
 const MUSIC_API_URL := "https://api.replicate.com/v1/predictions"
 
@@ -73,6 +75,8 @@ func _on_generate_pressed() -> void:
 			var ok := false
 			if _get_env("FORCE_LOCAL_AI").is_empty():
 				ok = await _try_generate_sprite_cloud(prompt_text)
+				if not ok:
+					ok = await _try_generate_sprite_hf(prompt_text)
 			if not ok:
 				await _ensure_local_and_generate_sprite(prompt_text)
 		AssetType.SFX:
@@ -205,6 +209,34 @@ func _try_generate_sprite_cloud(prompt_text: String) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Sprite generation — Cloud (HuggingFace FLUX.1-schnell)
+# ---------------------------------------------------------------------------
+
+func _try_generate_sprite_hf(prompt_text: String) -> bool:
+	var api_key := _get_env("HUGGING_FACE")
+	if api_key.is_empty():
+		return false
+
+	_set_status("Generating sprite via cloud (HuggingFace FLUX.1-schnell)...")
+	var body := {"inputs": prompt_text}
+
+	var result := await fetch_async(
+		HF_SPRITE_API_URL,
+		PackedStringArray([
+			"Content-Type: application/json",
+			"Authorization: Bearer %s" % api_key,
+		]),
+		JSON.stringify(body),
+	)
+	if result.is_empty():
+		return false
+
+	var file_path := _build_output_path("sprite", prompt_text, "jpg")
+	_save_bytes(file_path, result["body_raw"])
+	return true
+
+
+# ---------------------------------------------------------------------------
 # Sprite generation — Local (AUTOMATIC1111 Stable Diffusion WebUI)
 # ---------------------------------------------------------------------------
 
@@ -295,7 +327,7 @@ func _ensure_local_and_generate_sfx(prompt_text: String) -> void:
 	if result.is_empty():
 		return
 
-	var file_path := _build_output_path("sfx", prompt_text, "mp3")
+	var file_path := _build_output_path("sfx", prompt_text, "wav")
 	_save_bytes(file_path, result["body_raw"])
 
 
@@ -372,7 +404,7 @@ func _ensure_local_and_generate_music(prompt_text: String) -> void:
 	if result.is_empty():
 		return
 
-	var file_path := _build_output_path("music", prompt_text, "mp3")
+	var file_path := _build_output_path("music", prompt_text, "wav")
 	_save_bytes(file_path, result["body_raw"])
 
 

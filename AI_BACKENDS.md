@@ -122,11 +122,15 @@ in local-only setups) and proceed directly to local fallback.
 
 #### Current cloud API key env vars
 
-| Env var | Service | Used for |
-|---------|---------|----------|
-| `OPENAI_API_KEY` | OpenAI | Sprites (DALL-E 3) |
-| `ELEVENLABS_API_KEY` | ElevenLabs | SFX |
-| `REPLICATE_API_TOKEN` | Replicate | Music (Suno) |
+| Env var | Service | Used for | Priority |
+|---------|---------|----------|----------|
+| `OPENAI_API_KEY` | OpenAI | Sprites (DALL-E 3, PNG) | 1st |
+| `HUGGING_FACE` | HuggingFace (FLUX.1-schnell) | Sprites (JPEG) | 2nd (fallback if OpenAI absent/fails) |
+| `ELEVENLABS_API_KEY` | ElevenLabs | SFX (MP3) | 1st |
+| `REPLICATE_API_TOKEN` | Replicate | Music / SFX (MP3) | 1st |
+
+**Local audio format:** local AudioCraft servers return WAV; files are saved with `.wav` extension.
+**Cloud audio format:** ElevenLabs and Replicate return MP3; files are saved with `.mp3` extension.
 
 Add a new row here whenever a new cloud AI provider is introduced.
 

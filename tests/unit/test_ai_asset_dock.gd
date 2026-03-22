@@ -62,10 +62,16 @@ func test_build_output_path_format() -> void:
 	assert_true(path.ends_with(".png"))
 
 
-func test_build_output_path_music_ogg() -> void:
-	var path: String = _dock._build_output_path("music", "guitar", "ogg")
+func test_build_output_path_music_wav() -> void:
+	var path: String = _dock._build_output_path("music", "guitar", "wav")
 	assert_true(path.begins_with("res://assets/generated/music_guitar_"))
-	assert_true(path.ends_with(".ogg"))
+	assert_true(path.ends_with(".wav"))
+
+
+func test_build_output_path_sprite_jpg() -> void:
+	var path: String = _dock._build_output_path("sprite", "campfire", "jpg")
+	assert_true(path.begins_with("res://assets/generated/sprite_campfire_"))
+	assert_true(path.ends_with(".jpg"))
 
 
 # ── parse_json ───────────────────────────────────────────────────────────────
@@ -175,6 +181,14 @@ func test_try_generate_sprite_cloud_returns_false_without_key() -> void:
 		return
 	var ok: bool = await _dock._try_generate_sprite_cloud("test sprite")
 	assert_false(ok, "_try_generate_sprite_cloud must return false when key is missing")
+
+
+func test_try_generate_sprite_hf_returns_false_without_key() -> void:
+	if not OS.get_environment("HUGGING_FACE").is_empty():
+		pass_test("HUGGING_FACE is set — skipping missing-key test")
+		return
+	var ok: bool = await _dock._try_generate_sprite_hf("test sprite")
+	assert_false(ok, "_try_generate_sprite_hf must return false when key is missing")
 
 
 func test_try_generate_music_cloud_returns_false_without_key() -> void:
