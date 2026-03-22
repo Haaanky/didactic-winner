@@ -2,12 +2,15 @@
 
 This file provides guidance for AI assistants (Claude and others) working in this repository.
 
+> **Also read [`AI_BACKENDS.md`](./AI_BACKENDS.md) at the start of every session.**
+> It is a mandatory extension of this file covering all AI/LLM backend rules.
+
 ---
 
 ## MANDATORY RULES — Read First, Always
 
 > These rules apply to **every task, every file, every session** in this project. No exceptions.
-> AI assistants must read and comply with all sections below before writing a single line of code.
+> AI assistants must read and comply with all sections below **and** `cloud.md` before writing a single line of code.
 
 ---
 
