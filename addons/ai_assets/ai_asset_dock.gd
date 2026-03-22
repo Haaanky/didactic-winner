@@ -125,7 +125,7 @@ func _generate_sprite(prompt_text: String) -> void:
 		"model": "dall-e-3",
 		"prompt": prompt_text,
 		"n": 1,
-		"size": "256x256",
+		"size": "1024x1024",
 		"response_format": "url",
 	}
 
