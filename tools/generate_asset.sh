@@ -15,19 +15,19 @@
 #   Music  : POST http://localhost:8080/generate/music  (MusicGen wrapper)
 #            Override with LOCAL_MUSIC_URL env var.
 #
-# Usage (cloud — positional arguments):
+# Backend selection is automatic:
+#   The script probes each local endpoint before generating.
+#   If the server responds, local generation is used.
+#   Otherwise it falls back to cloud APIs.
+#   Set FORCE_CLOUD_AI=1 to skip probing and always use cloud APIs.
+#
+# Usage:
 #   ./tools/generate_asset.sh sprite "a pixel-art campfire in Alaska"
 #   ./tools/generate_asset.sh sfx    "crackling campfire ambience"
 #   ./tools/generate_asset.sh music  "peaceful acoustic guitar, Alaskan wilderness"
 #
-# Usage (local — add --local flag before the type):
-#   ./tools/generate_asset.sh --local sprite "a pixel-art campfire in Alaska"
-#   ./tools/generate_asset.sh --local sfx    "crackling campfire ambience"
-#   ./tools/generate_asset.sh --local music  "peaceful acoustic guitar"
-#
 # Usage (JSON spec file):
 #   ./tools/generate_asset.sh spec.json
-#   ./tools/generate_asset.sh --local spec.json
 #
 #   spec.json format:
 #   { "type": "sprite|sfx|music", "prompt": "description text" }
@@ -39,6 +39,7 @@
 #   LOCAL_SPRITE_URL     — override local sprite endpoint (optional)
 #   LOCAL_SFX_URL        — override local SFX endpoint (optional)
 #   LOCAL_MUSIC_URL      — override local music endpoint (optional)
+#   FORCE_CLOUD_AI       — set to any value to always use cloud APIs
 
 set -euo pipefail
 
@@ -89,11 +90,32 @@ die() {
   exit 1
 }
 
+# Returns 0 if a local server is reachable at the given URL, 1 otherwise.
+# Respects FORCE_CLOUD_AI — returns 1 immediately when set.
+probe_local() {
+  local url="$1"
+  [[ -n "${FORCE_CLOUD_AI:-}" ]] && return 1
+  curl --connect-timeout 2 -s -o /dev/null "$url" 2>/dev/null
+}
+
 mkdir -p "$OUTPUT_DIR"
 
-# ---- Sprite (Cloud — OpenAI DALL-E) ----
+# ---- Sprite ----
 
 generate_sprite() {
+  local prompt="$1"
+  local local_url="${LOCAL_SPRITE_URL:-$LOCAL_SPRITE_DEFAULT_URL}"
+
+  if probe_local "$local_url"; then
+    echo "Local sprite server detected — using local backend"
+    _generate_sprite_local "$prompt" "$local_url"
+  else
+    echo "No local server — using cloud (OpenAI DALL-E)"
+    _generate_sprite_cloud "$prompt"
+  fi
+}
+
+_generate_sprite_cloud() {
   local prompt="$1"
   [[ -z "${OPENAI_API_KEY:-}" ]] && die "OPENAI_API_KEY not set"
 
@@ -120,15 +142,8 @@ generate_sprite() {
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
-# ---- Sprite (Local — AUTOMATIC1111 Stable Diffusion WebUI) ----
-#
-# Compatible server: https://github.com/AUTOMATIC1111/stable-diffusion-webui
-# Start with: ./webui.sh --api
-# Override endpoint with LOCAL_SPRITE_URL env var.
-
-generate_sprite_local() {
-  local prompt="$1"
-  local url="${LOCAL_SPRITE_URL:-$LOCAL_SPRITE_DEFAULT_URL}"
+_generate_sprite_local() {
+  local prompt="$1" url="$2"
 
   echo "Generating sprite (local — $url): $prompt"
   local response
@@ -152,9 +167,22 @@ generate_sprite_local() {
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
-# ---- SFX (Cloud — ElevenLabs) ----
+# ---- SFX ----
 
 generate_sfx() {
+  local prompt="$1"
+  local local_url="${LOCAL_SFX_URL:-$LOCAL_SFX_DEFAULT_URL}"
+
+  if probe_local "$local_url"; then
+    echo "Local SFX server detected — using local backend"
+    _generate_sfx_local "$prompt" "$local_url"
+  else
+    echo "No local server — using cloud (ElevenLabs)"
+    _generate_sfx_cloud "$prompt"
+  fi
+}
+
+_generate_sfx_cloud() {
   local prompt="$1"
   [[ -z "${ELEVENLABS_API_KEY:-}" ]] && die "ELEVENLABS_API_KEY not set"
 
@@ -171,16 +199,8 @@ generate_sfx() {
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
-# ---- SFX (Local — AudioCraft wrapper) ----
-#
-# Compatible server: simple FastAPI/Flask wrapper around Meta AudioCraft.
-# Expected request : POST /generate/sfx  {"text": "...", "duration": 5}
-# Expected response: raw MP3 bytes (Content-Type: audio/mpeg)
-# Override endpoint with LOCAL_SFX_URL env var.
-
-generate_sfx_local() {
-  local prompt="$1"
-  local url="${LOCAL_SFX_URL:-$LOCAL_SFX_DEFAULT_URL}"
+_generate_sfx_local() {
+  local prompt="$1" url="$2"
 
   echo "Generating SFX (local — $url): $prompt"
   local filename
@@ -194,9 +214,22 @@ generate_sfx_local() {
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
-# ---- Music (Cloud — Suno via Replicate) ----
+# ---- Music ----
 
 generate_music() {
+  local prompt="$1"
+  local local_url="${LOCAL_MUSIC_URL:-$LOCAL_MUSIC_DEFAULT_URL}"
+
+  if probe_local "$local_url"; then
+    echo "Local music server detected — using local backend"
+    _generate_music_local "$prompt" "$local_url"
+  else
+    echo "No local server — using cloud (Suno via Replicate)"
+    _generate_music_cloud "$prompt"
+  fi
+}
+
+_generate_music_cloud() {
   local prompt="$1"
   [[ -z "${REPLICATE_API_TOKEN:-}" ]] && die "REPLICATE_API_TOKEN not set"
 
@@ -243,16 +276,8 @@ generate_music() {
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
-# ---- Music (Local — MusicGen via AudioCraft wrapper) ----
-#
-# Compatible server: simple FastAPI/Flask wrapper around Meta MusicGen.
-# Expected request : POST /generate/music  {"text": "...", "duration": 30}
-# Expected response: raw MP3 bytes (Content-Type: audio/mpeg)
-# Override endpoint with LOCAL_MUSIC_URL env var.
-
-generate_music_local() {
-  local prompt="$1"
-  local url="${LOCAL_MUSIC_URL:-$LOCAL_MUSIC_DEFAULT_URL}"
+_generate_music_local() {
+  local prompt="$1" url="$2"
 
   echo "Generating music (local — $url): $prompt"
   local filename
@@ -268,19 +293,13 @@ generate_music_local() {
 
 # ---- Main ----
 
-USE_LOCAL=false
-if [[ "${1:-}" == "--local" ]]; then
-  USE_LOCAL=true
-  shift
-fi
-
 if [[ $# -lt 1 ]]; then
-  echo "Usage: $0 [--local] <sprite|sfx|music> \"prompt text\""
-  echo "       $0 [--local] spec.json"
+  echo "Usage: $0 <sprite|sfx|music> \"prompt text\""
+  echo "       $0 spec.json"
   exit 1
 fi
 
-# JSON spec file mode: single argument ending in .json
+# JSON spec file mode
 if [[ $# -eq 1 && "$1" == *.json ]]; then
   spec_file="$1"
   [[ ! -f "$spec_file" ]] && die "Spec file not found: $spec_file"
@@ -290,43 +309,25 @@ if [[ $# -eq 1 && "$1" == *.json ]]; then
   [[ -z "$asset_type" ]] && die "Spec file missing \"type\" field"
   [[ -z "$asset_prompt" ]] && die "Spec file missing \"prompt\" field"
 
-  if [[ "$USE_LOCAL" == true ]]; then
-    case "$asset_type" in
-      sprite) generate_sprite_local "$asset_prompt" ;;
-      sfx)    generate_sfx_local "$asset_prompt" ;;
-      music)  generate_music_local "$asset_prompt" ;;
-      *)      die "Unknown asset type in spec: $asset_type (use sprite, sfx, or music)" ;;
-    esac
-  else
-    case "$asset_type" in
-      sprite) generate_sprite "$asset_prompt" ;;
-      sfx)    generate_sfx "$asset_prompt" ;;
-      music)  generate_music "$asset_prompt" ;;
-      *)      die "Unknown asset type in spec: $asset_type (use sprite, sfx, or music)" ;;
-    esac
-  fi
+  case "$asset_type" in
+    sprite) generate_sprite "$asset_prompt" ;;
+    sfx)    generate_sfx "$asset_prompt" ;;
+    music)  generate_music "$asset_prompt" ;;
+    *)      die "Unknown asset type in spec: $asset_type (use sprite, sfx, or music)" ;;
+  esac
   exit 0
 fi
 
 # Positional argument mode
 if [[ $# -lt 2 ]]; then
-  echo "Usage: $0 [--local] <sprite|sfx|music> \"prompt text\""
-  echo "       $0 [--local] spec.json"
+  echo "Usage: $0 <sprite|sfx|music> \"prompt text\""
+  echo "       $0 spec.json"
   exit 1
 fi
 
-if [[ "$USE_LOCAL" == true ]]; then
-  case "$1" in
-    sprite) generate_sprite_local "$2" ;;
-    sfx)    generate_sfx_local "$2" ;;
-    music)  generate_music_local "$2" ;;
-    *)      die "Unknown asset type: $1 (use sprite, sfx, or music)" ;;
-  esac
-else
-  case "$1" in
-    sprite) generate_sprite "$2" ;;
-    sfx)    generate_sfx "$2" ;;
-    music)  generate_music "$2" ;;
-    *)      die "Unknown asset type: $1 (use sprite, sfx, or music)" ;;
-  esac
-fi
+case "$1" in
+  sprite) generate_sprite "$2" ;;
+  sfx)    generate_sfx "$2" ;;
+  music)  generate_music "$2" ;;
+  *)      die "Unknown asset type: $1 (use sprite, sfx, or music)" ;;
+esac

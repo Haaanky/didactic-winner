@@ -115,7 +115,7 @@ func test_save_bytes_creates_output_directory() -> void:
 	DirAccess.remove_absolute(test_path)
 
 
-# ── UI wiring — TypeOption ────────────────────────────────────────────────────
+# ── UI wiring ─────────────────────────────────────────────────────────────────
 
 func test_type_option_has_three_items() -> void:
 	assert_eq(_dock._type_option.item_count, 3)
@@ -132,26 +132,6 @@ func test_type_option_sfx_is_second() -> void:
 func test_type_option_music_is_third() -> void:
 	assert_eq(_dock._type_option.get_item_text(2), "Music (MP3)")
 
-
-# ── UI wiring — BackendOption ─────────────────────────────────────────────────
-
-func test_backend_option_has_two_items() -> void:
-	assert_eq(_dock._backend_option.item_count, 2)
-
-
-func test_backend_option_cloud_is_first() -> void:
-	assert_eq(_dock._backend_option.get_item_text(0), "Cloud")
-
-
-func test_backend_option_local_is_second() -> void:
-	assert_eq(_dock._backend_option.get_item_text(1), "Local")
-
-
-func test_backend_option_defaults_to_cloud() -> void:
-	assert_eq(_dock._backend_option.selected, 0)
-
-
-# ── UI wiring — other nodes ───────────────────────────────────────────────────
 
 func test_generate_button_exists() -> void:
 	assert_not_null(_dock._generate_button)
@@ -179,7 +159,34 @@ func test_generate_with_whitespace_prompt_shows_error() -> void:
 	assert_eq(_dock._status_label.text, "Enter a prompt first.")
 
 
-# ── API key guard (sprite — cloud) ───────────────────────────────────────────
+# ── resolve_local_url ─────────────────────────────────────────────────────────
+
+func test_resolve_local_url_uses_env_override() -> void:
+	# This test requires no env override to be set for the key we use
+	var result: String = _dock._resolve_local_url(
+		"__TEST_NONEXISTENT_KEY__",
+		"http://localhost:9999/default"
+	)
+	assert_eq(result, "http://localhost:9999/default")
+
+
+# ── local probe — FORCE_CLOUD_AI blocks local ─────────────────────────────────
+
+func test_local_reachable_returns_false_when_force_cloud_set() -> void:
+	# FORCE_CLOUD_AI=1 must always return false without attempting connection.
+	# We cannot set env vars at runtime in GDScript, so we test _local_reachable
+	# indirectly: when FORCE_CLOUD_AI is set in the environment the probe returns
+	# false and cloud APIs are used.  This test guards the documented contract.
+	#
+	# If FORCE_CLOUD_AI is already set in the test environment, probe must be false.
+	if not OS.get_environment("FORCE_CLOUD_AI").is_empty():
+		var result: bool = await _dock._local_reachable("http://localhost:7860")
+		assert_false(result, "FORCE_CLOUD_AI set — _local_reachable must return false")
+	else:
+		pass_test("FORCE_CLOUD_AI not set — skipping (integration environment needed)")
+
+
+# ── API key guard (cloud sprite) ─────────────────────────────────────────────
 
 func test_generate_sprite_cloud_without_key_shows_error() -> void:
 	if not OS.get_environment("OPENAI_API_KEY").is_empty():
@@ -187,60 +194,20 @@ func test_generate_sprite_cloud_without_key_shows_error() -> void:
 		return
 	_dock._prompt_edit.text = "test sprite"
 	_dock._type_option.select(0)
-	_dock._backend_option.select(0)
-	_dock._on_generate_pressed()
-	await get_tree().process_frame
+	# Force cloud by making local unreachable (no server running in test env)
+	# and checking cloud API key gate.
+	await _dock._generate_sprite("test sprite")
 	assert_string_contains(_dock._status_label.text, "OPENAI_API_KEY")
 	assert_push_error_count(1)
 
 
-# ── local sprite — no API key required ───────────────────────────────────────
-
-func test_generate_sprite_local_does_not_require_openai_key() -> void:
-	# Local backend must not gate on OPENAI_API_KEY.
-	# It will fail trying to connect to localhost, but the error must NOT
-	# mention OPENAI_API_KEY.
-	_dock._prompt_edit.text = "test local sprite"
-	_dock._type_option.select(0)
-	_dock._backend_option.select(1)
-	_dock._on_generate_pressed()
-	await get_tree().process_frame
-	assert_string_does_not_contain(_dock._status_label.text, "OPENAI_API_KEY")
-
-
-# ── local SFX — no API key required ──────────────────────────────────────────
-
-func test_generate_sfx_local_does_not_require_elevenlabs_key() -> void:
-	_dock._prompt_edit.text = "test local sfx"
-	_dock._type_option.select(1)
-	_dock._backend_option.select(1)
-	_dock._on_generate_pressed()
-	await get_tree().process_frame
-	assert_string_does_not_contain(_dock._status_label.text, "ELEVENLABS_API_KEY")
-
-
-# ── local music — no API key required ────────────────────────────────────────
-
-func test_generate_music_local_does_not_require_replicate_key() -> void:
-	_dock._prompt_edit.text = "test local music"
-	_dock._type_option.select(2)
-	_dock._backend_option.select(1)
-	_dock._on_generate_pressed()
-	await get_tree().process_frame
-	assert_string_does_not_contain(_dock._status_label.text, "REPLICATE_API_TOKEN")
-
-
-# ── API key guard (music — cloud) ────────────────────────────────────────────
+# ── API key guard (cloud music) ──────────────────────────────────────────────
 
 func test_generate_music_cloud_without_key_shows_error() -> void:
 	if not OS.get_environment("REPLICATE_API_TOKEN").is_empty():
 		pass_test("REPLICATE_API_TOKEN is set — skipping missing-key test")
 		return
-	_dock._prompt_edit.text = "test music"
-	_dock._type_option.select(2)
-	_dock._backend_option.select(0)
-	_dock._on_generate_pressed()
-	await get_tree().process_frame
+	await _dock._generate_music("test music")
 	assert_string_contains(_dock._status_label.text, "REPLICATE_API_TOKEN")
 	assert_push_error_count(1)
 

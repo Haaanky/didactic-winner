@@ -15,9 +15,12 @@ extends VBoxContainer
 ##            Override with LOCAL_SFX_URL env var.
 ##   Music  : POST http://localhost:8080/generate/music  (MusicGen wrapper)
 ##            Override with LOCAL_MUSIC_URL env var.
+##
+## Backend selection is automatic: the dock probes the local endpoint before
+## each generation and uses it if reachable; otherwise falls back to cloud.
+## Set FORCE_CLOUD_AI=1 to skip probing and always use cloud APIs.
 
 enum AssetType { SPRITE, SFX, MUSIC }
-enum Backend { CLOUD, LOCAL }
 
 const SPRITE_API_URL := "https://api.openai.com/v1/images/generations"
 const SFX_API_URL := "https://api.elevenlabs.io/v1/sound-generation"
@@ -29,6 +32,7 @@ const LOCAL_MUSIC_API_URL := "http://localhost:8080/generate/music"
 
 const OUTPUT_DIR := "res://assets/generated/"
 const TIMEOUT_MSEC := 30000
+const PROBE_TIMEOUT_MSEC := 2000
 const MUSIC_POLL_INTERVAL_SEC := 3.0
 const MUSIC_POLL_MAX_ATTEMPTS := 20
 const SLUG_MAX_LENGTH := 32
@@ -38,7 +42,6 @@ const LOCAL_SPRITE_STEPS := 20
 const LOCAL_SPRITE_CFG_SCALE := 7.0
 
 @onready var _type_option: OptionButton = %TypeOption
-@onready var _backend_option: OptionButton = %BackendOption
 @onready var _prompt_edit: TextEdit = %PromptEdit
 @onready var _generate_button: Button = %GenerateButton
 @onready var _status_label: Label = %StatusLabel
@@ -49,9 +52,6 @@ func _ready() -> void:
 	_type_option.add_item("Sprite (PNG)", AssetType.SPRITE)
 	_type_option.add_item("SFX (MP3)", AssetType.SFX)
 	_type_option.add_item("Music (MP3)", AssetType.MUSIC)
-	_backend_option.clear()
-	_backend_option.add_item("Cloud", Backend.CLOUD)
-	_backend_option.add_item("Local", Backend.LOCAL)
 	_generate_button.pressed.connect(_on_generate_pressed)
 
 
@@ -61,26 +61,53 @@ func _on_generate_pressed() -> void:
 		_set_status("Enter a prompt first.")
 		return
 	var asset_type: AssetType = _type_option.get_selected_id() as AssetType
-	var backend: Backend = _backend_option.get_selected_id() as Backend
 	_generate_button.disabled = true
 	_set_status("Generating...")
 	match asset_type:
 		AssetType.SPRITE:
-			if backend == Backend.LOCAL:
-				await _generate_sprite_local(prompt_text)
+			var local_url := _resolve_local_url("LOCAL_SPRITE_URL", LOCAL_SPRITE_API_URL)
+			if await _local_reachable(local_url):
+				await _generate_sprite_local(prompt_text, local_url)
 			else:
 				await _generate_sprite(prompt_text)
 		AssetType.SFX:
-			if backend == Backend.LOCAL:
-				await _generate_sfx_local(prompt_text)
+			var local_url := _resolve_local_url("LOCAL_SFX_URL", LOCAL_SFX_API_URL)
+			if await _local_reachable(local_url):
+				await _generate_sfx_local(prompt_text, local_url)
 			else:
 				await _generate_sfx(prompt_text)
 		AssetType.MUSIC:
-			if backend == Backend.LOCAL:
-				await _generate_music_local(prompt_text)
+			var local_url := _resolve_local_url("LOCAL_MUSIC_URL", LOCAL_MUSIC_API_URL)
+			if await _local_reachable(local_url):
+				await _generate_music_local(prompt_text, local_url)
 			else:
 				await _generate_music(prompt_text)
 	_generate_button.disabled = false
+
+
+# ---------------------------------------------------------------------------
+# Local server probe
+# ---------------------------------------------------------------------------
+
+func _resolve_local_url(env_key: String, default_url: String) -> String:
+	var override := _get_env(env_key)
+	return override if not override.is_empty() else default_url
+
+
+func _local_reachable(url: String) -> bool:
+	if not _get_env("FORCE_CLOUD_AI").is_empty():
+		return false
+	var parsed := _parse_url(url)
+	var http := HTTPClient.new()
+	if http.connect_to_host(parsed["host"], parsed["port"], parsed["tls"]) != OK:
+		return false
+	var deadline := Time.get_ticks_msec() + PROBE_TIMEOUT_MSEC
+	while http.get_status() in [HTTPClient.STATUS_CONNECTING, HTTPClient.STATUS_RESOLVING]:
+		http.poll()
+		if Time.get_ticks_msec() > deadline:
+			return false
+		await get_tree().process_frame
+	return http.get_status() == HTTPClient.STATUS_CONNECTED
 
 
 # ---------------------------------------------------------------------------
@@ -140,17 +167,10 @@ func _generate_sprite(prompt_text: String) -> void:
 
 # ---------------------------------------------------------------------------
 # Sprite generation — Local (AUTOMATIC1111 Stable Diffusion WebUI)
-#
-# Compatible server: https://github.com/AUTOMATIC1111/stable-diffusion-webui
-# Start with: ./webui.sh --api
-# Override endpoint with LOCAL_SPRITE_URL env var.
 # ---------------------------------------------------------------------------
 
-func _generate_sprite_local(prompt_text: String) -> void:
-	var url := _get_env("LOCAL_SPRITE_URL")
-	if url.is_empty():
-		url = LOCAL_SPRITE_API_URL
-
+func _generate_sprite_local(prompt_text: String, url: String) -> void:
+	_set_status("Generating sprite via local server...")
 	var body := {
 		"prompt": prompt_text,
 		"width": LOCAL_SPRITE_RESOLUTION,
@@ -213,18 +233,10 @@ func _generate_sfx(prompt_text: String) -> void:
 
 # ---------------------------------------------------------------------------
 # SFX generation — Local (AudioCraft wrapper)
-#
-# Compatible server: simple FastAPI/Flask wrapper around Meta AudioCraft.
-# Expected request : POST /generate/sfx  {"text": "...", "duration": 5}
-# Expected response: raw MP3 bytes (Content-Type: audio/mpeg)
-# Override endpoint with LOCAL_SFX_URL env var.
 # ---------------------------------------------------------------------------
 
-func _generate_sfx_local(prompt_text: String) -> void:
-	var url := _get_env("LOCAL_SFX_URL")
-	if url.is_empty():
-		url = LOCAL_SFX_API_URL
-
+func _generate_sfx_local(prompt_text: String, url: String) -> void:
+	_set_status("Generating SFX via local server...")
 	var body := {
 		"text": prompt_text,
 		"duration": 5,
@@ -296,18 +308,10 @@ func _generate_music(prompt_text: String) -> void:
 
 # ---------------------------------------------------------------------------
 # Music generation — Local (MusicGen via AudioCraft wrapper)
-#
-# Compatible server: simple FastAPI/Flask wrapper around Meta MusicGen.
-# Expected request : POST /generate/music  {"text": "...", "duration": 30}
-# Expected response: raw MP3 bytes (Content-Type: audio/mpeg)
-# Override endpoint with LOCAL_MUSIC_URL env var.
 # ---------------------------------------------------------------------------
 
-func _generate_music_local(prompt_text: String) -> void:
-	var url := _get_env("LOCAL_MUSIC_URL")
-	if url.is_empty():
-		url = LOCAL_MUSIC_API_URL
-
+func _generate_music_local(prompt_text: String, url: String) -> void:
+	_set_status("Generating music via local server...")
 	var body := {
 		"text": prompt_text,
 		"duration": 30,
