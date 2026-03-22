@@ -2,9 +2,9 @@
 # generate_asset.sh — CLI batch asset generator for Dudes in Alaska
 #
 # API endpoints (keep in sync with addons/ai_assets/ai_asset_dock.gd):
-#   Sprite : POST https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0
+#   Sprite : POST https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0
 #   SFX    : POST https://api.elevenlabs.io/v1/sound-generation
-#   Music  : POST https://api-inference.huggingface.co/models/facebook/musicgen-small
+#   Music  : POST https://router.huggingface.co/hf-inference/models/facebook/musicgen-small
 #
 # Usage (positional arguments):
 #   ./tools/generate_asset.sh sprite "a pixel-art campfire in Alaska"
@@ -27,9 +27,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 OUTPUT_DIR="$PROJECT_ROOT/assets/generated"
 
-SPRITE_API_URL="https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
+SPRITE_API_URL="https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
 SFX_API_URL="https://api.elevenlabs.io/v1/sound-generation"
-MUSIC_API_URL="https://api-inference.huggingface.co/models/facebook/musicgen-small"
+MUSIC_API_URL="https://router.huggingface.co/hf-inference/models/facebook/musicgen-small"
 
 # Load .env if it exists
 if [[ -f "$PROJECT_ROOT/.env" ]]; then

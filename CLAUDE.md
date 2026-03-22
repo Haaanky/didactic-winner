@@ -613,9 +613,9 @@ These URLs are defined at the top of both `addons/ai_assets/ai_asset_dock.gd` an
 
 | Asset | Method | URL |
 |-------|--------|-----|
-| Sprite | `POST` | `https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0` |
+| Sprite | `POST` | `https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0` |
 | SFX | `POST` | `https://api.elevenlabs.io/v1/sound-generation` |
-| Music | `POST` | `https://api-inference.huggingface.co/models/facebook/musicgen-small` |
+| Music | `POST` | `https://router.huggingface.co/hf-inference/models/facebook/musicgen-small` |
 
 ### Generated Files
 

@@ -3,15 +3,15 @@ extends VBoxContainer
 ## Editor dock for generating game assets via AI APIs.
 ##
 ## API endpoints (keep in sync with tools/generate_asset.sh):
-##   Sprite : POST https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0
+##   Sprite : POST https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0
 ##   SFX    : POST https://api.elevenlabs.io/v1/sound-generation
-##   Music  : POST https://api-inference.huggingface.co/models/facebook/musicgen-small
+##   Music  : POST https://router.huggingface.co/hf-inference/models/facebook/musicgen-small
 
 enum AssetType { SPRITE, SFX, MUSIC }
 
-const SPRITE_API_URL := "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0"
+const SPRITE_API_URL := "https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0"
 const SFX_API_URL := "https://api.elevenlabs.io/v1/sound-generation"
-const MUSIC_API_URL := "https://api-inference.huggingface.co/models/facebook/musicgen-small"
+const MUSIC_API_URL := "https://router.huggingface.co/hf-inference/models/facebook/musicgen-small"
 
 const OUTPUT_DIR := "res://assets/generated/"
 const TIMEOUT_MSEC := 30000
