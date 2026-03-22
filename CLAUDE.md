@@ -10,7 +10,7 @@ This file provides guidance for AI assistants (Claude and others) working in thi
 ## MANDATORY RULES — Read First, Always
 
 > These rules apply to **every task, every file, every session** in this project. No exceptions.
-> AI assistants must read and comply with all sections below **and** `cloud.md` before writing a single line of code.
+> AI assistants must read and comply with all sections below **and** `AI_BACKENDS.md` before writing a single line of code.
 
 ---
 
