@@ -15,25 +15,30 @@ embeddings, or any other AI API. The backend selection must be invisible to the 
 
 ---
 
-## CRITICAL: Never start local model servers inside a Claude Code session
+## CRITICAL: Never start local model servers from inside Claude's cloud environment
 
 The local servers (`tools/local_sprite_server.py`, `tools/local_audio_server.py`)
-are **exclusively for the developer's own machine**. Do **not** start them, invoke
-them, or trigger their installation inside a Claude Code (cloud) session.
+may be started freely on the developer's own machine or any controlled/self-hosted
+environment. They must **not** be started from a Claude Code session running in
+Anthropic's cloud infrastructure.
 
-**Why:** A Claude Code session runs in a cloud container. Starting a local model
-server there would burn Anthropic compute for a 5–20 minute CPU job — not the
-user's hardware. It is wasteful and will time out.
+**Why:** Anthropic's cloud container is shared compute. A 5–20 min CPU-bound
+Stable Diffusion or MusicGen job run there consumes Claude usage quota — not the
+user's hardware — and will likely time out.
 
-**Rule for AI assistants:** When running inside Claude Code:
+**How to detect:** You are in Claude's cloud environment if there is no local GPU,
+the hostname is an ephemeral container, or the session was opened via claude.ai or
+the Claude Code web interface without a self-hosted runner.
+
+**Rule for AI assistants when running in Claude's cloud:**
 - Do **not** execute `tools/local_sprite_server.py` or `tools/local_audio_server.py`
 - Do **not** run `pip install torch`, `pip install diffusers`, or `pip install audiocraft`
 - Do **not** call `./tools/generate_asset.sh` with `FORCE_LOCAL_AI=1`
-- If cloud generation fails and there is no valid API key, report the missing key
-  and instruct the user to run `generate_asset.sh` locally on their own machine
+- If cloud generation fails and no API key is available, report the missing key
+  and instruct the user to run `generate_asset.sh` on their own machine
 
-The local fallback path is only ever exercised by the developer running the script
-on their own hardware.
+On the developer's local machine or a self-hosted runner the local servers work as
+intended and should be started normally via `LOCAL_*_START_CMD`.
 
 ---
 
