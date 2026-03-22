@@ -43,10 +43,10 @@ func test_slugify_trims_leading_trailing_underscores() -> void:
 	assert_eq(result, "hello")
 
 
-func test_slugify_truncates_to_40_chars() -> void:
+func test_slugify_truncates_to_32_chars() -> void:
 	var long_prompt := "a".repeat(60)
 	var result: String = _dock._slugify(long_prompt)
-	assert_true(result.length() <= 40, "slug length should be <= 40, got %d" % result.length())
+	assert_true(result.length() <= 32, "slug length should be <= 32, got %d" % result.length())
 
 
 func test_slugify_empty_string() -> void:
@@ -126,11 +126,11 @@ func test_type_option_sprite_is_first() -> void:
 
 
 func test_type_option_sfx_is_second() -> void:
-	assert_eq(_dock._type_option.get_item_text(1), "SFX (WAV)")
+	assert_eq(_dock._type_option.get_item_text(1), "SFX (MP3)")
 
 
 func test_type_option_music_is_third() -> void:
-	assert_eq(_dock._type_option.get_item_text(2), "Music (OGG)")
+	assert_eq(_dock._type_option.get_item_text(2), "Music (MP3)")
 
 
 func test_generate_button_exists() -> void:
@@ -162,7 +162,6 @@ func test_generate_with_whitespace_prompt_shows_error() -> void:
 # ── API key guard (sprite) ───────────────────────────────────────────────────
 
 func test_generate_sprite_without_key_shows_error() -> void:
-	# Ensure no key is set in the test environment
 	if not OS.get_environment("OPENAI_API_KEY").is_empty():
 		pass_test("OPENAI_API_KEY is set — skipping missing-key test")
 		return
@@ -171,6 +170,7 @@ func test_generate_sprite_without_key_shows_error() -> void:
 	_dock._on_generate_pressed()
 	await get_tree().process_frame
 	assert_string_contains(_dock._status_label.text, "OPENAI_API_KEY")
+	assert_push_error_count(1)
 
 
 # ── API key guard (music) ───────────────────────────────────────────────────
@@ -184,6 +184,7 @@ func test_generate_music_without_key_shows_error() -> void:
 	_dock._on_generate_pressed()
 	await get_tree().process_frame
 	assert_string_contains(_dock._status_label.text, "REPLICATE_API_TOKEN")
+	assert_push_error_count(1)
 
 
 # ── set_status ───────────────────────────────────────────────────────────────
