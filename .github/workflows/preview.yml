@@ -103,7 +103,7 @@ jobs:
           cd /tmp/gh-pages
           git add "${PREVIEW_DIR}"
           git commit -m "Deploy preview for ${{ github.ref_name }} @ ${{ github.sha }}" || echo "Nothing to commit"
-          git push origin gh-pages
+          git push origin HEAD:gh-pages
 
       - name: Post build status to PR
         env:
