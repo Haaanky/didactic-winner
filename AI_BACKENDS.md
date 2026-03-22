@@ -15,6 +15,28 @@ embeddings, or any other AI API. The backend selection must be invisible to the 
 
 ---
 
+## CRITICAL: Never start local model servers inside a Claude Code session
+
+The local servers (`tools/local_sprite_server.py`, `tools/local_audio_server.py`)
+are **exclusively for the developer's own machine**. Do **not** start them, invoke
+them, or trigger their installation inside a Claude Code (cloud) session.
+
+**Why:** A Claude Code session runs in a cloud container. Starting a local model
+server there would burn Anthropic compute for a 5–20 minute CPU job — not the
+user's hardware. It is wasteful and will time out.
+
+**Rule for AI assistants:** When running inside Claude Code:
+- Do **not** execute `tools/local_sprite_server.py` or `tools/local_audio_server.py`
+- Do **not** run `pip install torch`, `pip install diffusers`, or `pip install audiocraft`
+- Do **not** call `./tools/generate_asset.sh` with `FORCE_LOCAL_AI=1`
+- If cloud generation fails and there is no valid API key, report the missing key
+  and instruct the user to run `generate_asset.sh` locally on their own machine
+
+The local fallback path is only ever exercised by the developer running the script
+on their own hardware.
+
+---
+
 ## Mandatory rules for all AI service code
 
 ### 1. Never add manual backend selectors
