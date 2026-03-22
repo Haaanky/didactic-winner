@@ -238,7 +238,7 @@ func _parse_url(url: String) -> Dictionary:
 
 
 func _get_env(key: String) -> String:
-	return OS.get_environment(key)
+	return OS.get_environment(key).trim_suffix(";")
 
 
 func _parse_json(text: String) -> Dictionary:

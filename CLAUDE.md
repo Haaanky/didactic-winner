@@ -462,7 +462,18 @@ godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit -ginclude_sub
 - The first command imports the project and registers class names (required once per session).
 - The second command runs all tests. Exit code 0 = all passed; non-zero = at least one failure.
 - Do **not** push if any test is failing, even if it is unrelated to the current change.
-- If Godot is not installed, download it from https://godotengine.org/download before pushing.
+- If `godot` is not found, install it before running tests:
+
+```bash
+# Download and install Godot 4 latest stable (Linux, headless)
+GODOT_VERSION="4.4.1"
+wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -O /tmp/godot.zip
+unzip -q /tmp/godot.zip -d /tmp/godot
+install -m 755 "/tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+rm -rf /tmp/godot /tmp/godot.zip
+```
+
+  Update `GODOT_VERSION` to the current latest stable before running.
 
 ---
 

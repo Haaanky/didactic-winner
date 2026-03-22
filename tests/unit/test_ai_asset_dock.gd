@@ -130,7 +130,7 @@ func test_type_option_sfx_is_second() -> void:
 
 
 func test_type_option_music_is_third() -> void:
-	assert_eq(_dock._type_option.get_item_text(2), "Music (MP3)")
+	assert_eq(_dock._type_option.get_item_text(2), "Music (FLAC)")
 
 
 func test_generate_button_exists() -> void:
@@ -162,28 +162,28 @@ func test_generate_with_whitespace_prompt_shows_error() -> void:
 # ── API key guard (sprite) ───────────────────────────────────────────────────
 
 func test_generate_sprite_without_key_shows_error() -> void:
-	if not OS.get_environment("OPENAI_API_KEY").is_empty():
-		pass_test("OPENAI_API_KEY is set — skipping missing-key test")
+	if not OS.get_environment("HUGGING_FACE").is_empty():
+		pass_test("HUGGING_FACE is set — skipping missing-key test")
 		return
 	_dock._prompt_edit.text = "test sprite"
 	_dock._type_option.select(0)
 	_dock._on_generate_pressed()
 	await get_tree().process_frame
-	assert_string_contains(_dock._status_label.text, "OPENAI_API_KEY")
+	assert_string_contains(_dock._status_label.text, "HUGGING_FACE")
 	assert_push_error_count(1)
 
 
 # ── API key guard (music) ───────────────────────────────────────────────────
 
 func test_generate_music_without_key_shows_error() -> void:
-	if not OS.get_environment("REPLICATE_API_TOKEN").is_empty():
-		pass_test("REPLICATE_API_TOKEN is set — skipping missing-key test")
+	if not OS.get_environment("HUGGING_FACE").is_empty():
+		pass_test("HUGGING_FACE is set — skipping missing-key test")
 		return
 	_dock._prompt_edit.text = "test music"
 	_dock._type_option.select(2)
 	_dock._on_generate_pressed()
 	await get_tree().process_frame
-	assert_string_contains(_dock._status_label.text, "REPLICATE_API_TOKEN")
+	assert_string_contains(_dock._status_label.text, "HUGGING_FACE")
 	assert_push_error_count(1)
 
 
