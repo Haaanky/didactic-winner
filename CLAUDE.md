@@ -608,28 +608,78 @@ func test_touch_on_play_button_queues_level_01() -> void:
 
 ---
 
-## Asset Generation Setup
+## Asset Generation
 
-The project includes an **AI Asset Generator** editor plugin (`addons/ai_assets/`) and a CLI batch script (`tools/generate_asset.sh`) for creating sprites, SFX, and music from text prompts.
+The project includes an **AI Asset Generator** editor plugin (`addons/ai_assets/`) and a CLI batch script (`tools/generate_asset.sh`) for generating sprites, SFX, and music from text prompts.
 
-### API Keys
+### For AI Assistants — How to Generate Assets
+
+**Whenever a task requires a new sprite, sound effect, or music track, generate it immediately using the CLI tool. Do not ask the user to do it manually.**
+
+```bash
+./tools/generate_asset.sh sprite "pixel-art description of the asset"
+./tools/generate_asset.sh sfx    "description of the sound"
+./tools/generate_asset.sh music  "description of the music style and mood"
+```
+
+The tool handles everything automatically:
+- Tries the cloud API first (if a key is available in the environment)
+- If cloud fails or no key is set, automatically starts and uses the local server
+- Saves the result to `assets/generated/` with a timestamped filename
+- Returns the saved path on stdout
+
+After running, reference the saved path in your GDScript with `preload("res://assets/generated/<filename>")`.
+
+**Example workflow** — adding a campfire to a scene:
+```bash
+# Generate the assets first
+./tools/generate_asset.sh sprite "pixel-art campfire, warm orange glow, Alaska night"
+./tools/generate_asset.sh sfx    "crackling wood fire, quiet night ambience"
+# Then use the output paths in the scene / script
+```
+
+### Backend Selection (Automatic)
+
+No configuration is required for basic use. The system selects the backend transparently:
+
+| Situation | What happens |
+|-----------|-------------|
+| Cloud API key present | Calls cloud API; falls back to local on any error |
+| Cloud API key missing | Skips cloud, goes directly to local |
+| Local server not running | Auto-starts it using `LOCAL_*_START_CMD` from `.env` |
+| `FORCE_LOCAL_AI=1` set | Skips cloud entirely, always uses local |
+
+See `AI_BACKENDS.md` for full rules.
+
+### API Keys (Cloud)
 
 Keys are read from OS environment variables. For convenience the CLI script also sources `.env` in the project root. Copy `.env.example` to `.env` and fill in any keys you need.
 
 | Variable | Service | Used for |
 |----------|---------|----------|
-| `HUGGING_FACE` | HuggingFace Inference API | Sprite (Stable Diffusion XL) and music (MusicGen) generation |
+| `OPENAI_API_KEY` | OpenAI | Sprite generation (DALL-E 3) |
 | `ELEVENLABS_API_KEY` | ElevenLabs | SFX generation |
+| `REPLICATE_API_TOKEN` | Replicate | Music generation (Suno) |
+
+### Local Server Auto-Start Commands (Optional)
+
+Set these in `.env` to let the tool start your local AI servers automatically on demand:
+
+| Variable | Server | Example value |
+|----------|--------|---------------|
+| `LOCAL_SPRITE_START_CMD` | AUTOMATIC1111 (Stable Diffusion) | `python /opt/sd-webui/launch.py --nowebui` |
+| `LOCAL_SFX_START_CMD` | AudioCraft wrapper | `python /opt/audiocraft_server/server.py` |
+| `LOCAL_MUSIC_START_CMD` | MusicGen wrapper | `python /opt/audiocraft_server/server.py` |
 
 ### API Endpoints
 
-These URLs are defined at the top of both `addons/ai_assets/ai_asset_dock.gd` and `tools/generate_asset.sh`. If an endpoint changes, update **both** files.
+Defined at the top of both `addons/ai_assets/ai_asset_dock.gd` and `tools/generate_asset.sh`. If an endpoint changes, update **both** files in the same commit.
 
-| Asset | Method | URL |
-|-------|--------|-----|
-| Sprite | `POST` | `https://router.huggingface.co/hf-inference/models/stabilityai/stable-diffusion-xl-base-1.0` |
-| SFX | `POST` | `https://api.elevenlabs.io/v1/sound-generation` |
-| Music | `POST` | `https://router.huggingface.co/hf-inference/models/facebook/musicgen-small` |
+| Asset | Cloud URL | Local default |
+|-------|-----------|---------------|
+| Sprite | `https://api.openai.com/v1/images/generations` | `http://localhost:7860/sdapi/v1/txt2img` |
+| SFX | `https://api.elevenlabs.io/v1/sound-generation` | `http://localhost:8080/generate/sfx` |
+| Music | `https://api.replicate.com/v1/predictions` | `http://localhost:8080/generate/music` |
 
 ### Generated Files
 
@@ -646,6 +696,7 @@ All generated assets are saved to `assets/generated/` with the naming pattern `{
 ./tools/generate_asset.sh sprite "a pixel-art campfire in Alaska"
 ./tools/generate_asset.sh sfx    "crackling campfire ambience"
 ./tools/generate_asset.sh music  "peaceful acoustic guitar, Alaskan wilderness"
+FORCE_LOCAL_AI=1 ./tools/generate_asset.sh sprite "snowy forest"
 ```
 
 Requires `curl` and `jq`.
