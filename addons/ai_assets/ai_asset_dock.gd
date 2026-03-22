@@ -11,14 +11,17 @@ extends VBoxContainer
 ## Local endpoints (keep in sync with tools/generate_asset.sh):
 ##   Sprite : POST http://localhost:7860/sdapi/v1/txt2img  (AUTOMATIC1111)
 ##            Override with LOCAL_SPRITE_URL env var.
+##            Auto-start with LOCAL_SPRITE_START_CMD env var.
 ##   SFX    : POST http://localhost:8080/generate/sfx  (AudioCraft wrapper)
 ##            Override with LOCAL_SFX_URL env var.
+##            Auto-start with LOCAL_SFX_START_CMD env var.
 ##   Music  : POST http://localhost:8080/generate/music  (MusicGen wrapper)
 ##            Override with LOCAL_MUSIC_URL env var.
+##            Auto-start with LOCAL_MUSIC_START_CMD env var.
 ##
-## Backend selection is automatic: the dock probes the local endpoint before
-## each generation and uses it if reachable; otherwise falls back to cloud.
-## Set FORCE_CLOUD_AI=1 to skip probing and always use cloud APIs.
+## Backend selection is automatic: cloud is tried first. If cloud is
+## unavailable (missing key or HTTP error), the local server is probed and
+## started automatically if needed. Set FORCE_LOCAL_AI=1 to skip cloud.
 
 enum AssetType { SPRITE, SFX, MUSIC }
 
@@ -33,6 +36,8 @@ const LOCAL_MUSIC_API_URL := "http://localhost:8080/generate/music"
 const OUTPUT_DIR := "res://assets/generated/"
 const TIMEOUT_MSEC := 30000
 const PROBE_TIMEOUT_MSEC := 2000
+const SPIN_UP_TIMEOUT_MSEC := 30000
+const SPIN_UP_POLL_SEC := 0.5
 const MUSIC_POLL_INTERVAL_SEC := 3.0
 const MUSIC_POLL_MAX_ATTEMPTS := 20
 const SLUG_MAX_LENGTH := 32
@@ -65,28 +70,28 @@ func _on_generate_pressed() -> void:
 	_set_status("Generating...")
 	match asset_type:
 		AssetType.SPRITE:
-			var local_url := _resolve_local_url("LOCAL_SPRITE_URL", LOCAL_SPRITE_API_URL)
-			if await _local_reachable(local_url):
-				await _generate_sprite_local(prompt_text, local_url)
-			else:
-				await _generate_sprite(prompt_text)
+			var ok := false
+			if _get_env("FORCE_LOCAL_AI").is_empty():
+				ok = await _try_generate_sprite_cloud(prompt_text)
+			if not ok:
+				await _ensure_local_and_generate_sprite(prompt_text)
 		AssetType.SFX:
-			var local_url := _resolve_local_url("LOCAL_SFX_URL", LOCAL_SFX_API_URL)
-			if await _local_reachable(local_url):
-				await _generate_sfx_local(prompt_text, local_url)
-			else:
-				await _generate_sfx(prompt_text)
+			var ok := false
+			if _get_env("FORCE_LOCAL_AI").is_empty():
+				ok = await _try_generate_sfx_cloud(prompt_text)
+			if not ok:
+				await _ensure_local_and_generate_sfx(prompt_text)
 		AssetType.MUSIC:
-			var local_url := _resolve_local_url("LOCAL_MUSIC_URL", LOCAL_MUSIC_API_URL)
-			if await _local_reachable(local_url):
-				await _generate_music_local(prompt_text, local_url)
-			else:
-				await _generate_music(prompt_text)
+			var ok := false
+			if _get_env("FORCE_LOCAL_AI").is_empty():
+				ok = await _try_generate_music_cloud(prompt_text)
+			if not ok:
+				await _ensure_local_and_generate_music(prompt_text)
 	_generate_button.disabled = false
 
 
 # ---------------------------------------------------------------------------
-# Local server probe
+# Local server probe and auto-spin-up
 # ---------------------------------------------------------------------------
 
 func _resolve_local_url(env_key: String, default_url: String) -> String:
@@ -95,8 +100,6 @@ func _resolve_local_url(env_key: String, default_url: String) -> String:
 
 
 func _local_reachable(url: String) -> bool:
-	if not _get_env("FORCE_CLOUD_AI").is_empty():
-		return false
 	var parsed := _parse_url(url)
 	var http := HTTPClient.new()
 	if http.connect_to_host(parsed["host"], parsed["port"], parsed["tls"]) != OK:
@@ -110,17 +113,53 @@ func _local_reachable(url: String) -> bool:
 	return http.get_status() == HTTPClient.STATUS_CONNECTED
 
 
+func _spin_up_server(start_cmd_env: String, probe_url: String) -> bool:
+	var cmd := _get_env(start_cmd_env)
+	if cmd.is_empty():
+		push_warning("AIAssetDock: %s not set — cannot auto-start local server" % start_cmd_env)
+		return false
+	var parts := cmd.split(" ", false)
+	if parts.is_empty():
+		push_error("AIAssetDock: %s is empty — cannot auto-start local server" % start_cmd_env)
+		return false
+	var args := PackedStringArray()
+	for i: int in range(1, parts.size()):
+		args.append(parts[i])
+	var pid := OS.create_process(parts[0], args)
+	if pid < 0:
+		push_error("AIAssetDock: failed to start local server — %s" % cmd)
+		return false
+	_set_status("Starting local server (waiting up to 30 s)...")
+	var deadline := Time.get_ticks_msec() + SPIN_UP_TIMEOUT_MSEC
+	while Time.get_ticks_msec() < deadline:
+		await get_tree().create_timer(SPIN_UP_POLL_SEC).timeout
+		if await _local_reachable(probe_url):
+			return true
+	push_error("AIAssetDock: local server did not become reachable within %d ms — %s" % [SPIN_UP_TIMEOUT_MSEC, probe_url])
+	return false
+
+
+func _ensure_local_server(url_env: String, default_url: String, start_cmd_env: String) -> String:
+	var url := _resolve_local_url(url_env, default_url)
+	if await _local_reachable(url):
+		return url
+	if await _spin_up_server(start_cmd_env, url):
+		return url
+	push_error("AIAssetDock: local server unavailable and could not be started — %s" % url)
+	_set_status("Error: local server unavailable. Set %s to auto-start." % start_cmd_env)
+	return ""
+
+
 # ---------------------------------------------------------------------------
 # Sprite generation — Cloud (OpenAI DALL-E)
 # ---------------------------------------------------------------------------
 
-func _generate_sprite(prompt_text: String) -> void:
+func _try_generate_sprite_cloud(prompt_text: String) -> bool:
 	var api_key := _get_env("OPENAI_API_KEY")
 	if api_key.is_empty():
-		push_error("AIAssetDock: OPENAI_API_KEY environment variable not set")
-		_set_status("Error: OPENAI_API_KEY not set.")
-		return
+		return false
 
+	_set_status("Generating sprite via cloud (OpenAI)...")
 	var body := {
 		"model": "dall-e-3",
 		"prompt": prompt_text,
@@ -135,15 +174,14 @@ func _generate_sprite(prompt_text: String) -> void:
 		JSON.stringify(body),
 	)
 	if result.is_empty():
-		return
+		return false
 
 	var json: Dictionary = _parse_json(result["body"])
 	if json.is_empty():
-		return
+		return false
 
 	if not json.has("data") or (json["data"] as Array).is_empty():
-		_set_status("Error: unexpected API response — no image data.")
-		return
+		return false
 
 	var image_data: Dictionary = json["data"][0]
 	var file_path := _build_output_path("sprite", prompt_text, "png")
@@ -151,6 +189,7 @@ func _generate_sprite(prompt_text: String) -> void:
 	if image_data.has("b64_json"):
 		var image_bytes := Marshalls.base64_to_raw(image_data["b64_json"])
 		_save_bytes(file_path, image_bytes)
+		return true
 	elif image_data.has("url"):
 		var download := await fetch_async(
 			image_data["url"],
@@ -159,17 +198,20 @@ func _generate_sprite(prompt_text: String) -> void:
 			HTTPClient.METHOD_GET,
 		)
 		if download.is_empty():
-			return
+			return false
 		_save_bytes(file_path, download["body_raw"])
-	else:
-		_set_status("Error: no url or b64_json in response.")
+		return true
+	return false
 
 
 # ---------------------------------------------------------------------------
 # Sprite generation — Local (AUTOMATIC1111 Stable Diffusion WebUI)
 # ---------------------------------------------------------------------------
 
-func _generate_sprite_local(prompt_text: String, url: String) -> void:
+func _ensure_local_and_generate_sprite(prompt_text: String) -> void:
+	var url := await _ensure_local_server("LOCAL_SPRITE_URL", LOCAL_SPRITE_API_URL, "LOCAL_SPRITE_START_CMD")
+	if url.is_empty():
+		return
 	_set_status("Generating sprite via local server...")
 	var body := {
 		"prompt": prompt_text,
@@ -206,13 +248,12 @@ func _generate_sprite_local(prompt_text: String, url: String) -> void:
 # SFX generation — Cloud (ElevenLabs)
 # ---------------------------------------------------------------------------
 
-func _generate_sfx(prompt_text: String) -> void:
+func _try_generate_sfx_cloud(prompt_text: String) -> bool:
 	var api_key := _get_env("ELEVENLABS_API_KEY")
 	if api_key.is_empty():
-		push_error("AIAssetDock: ELEVENLABS_API_KEY environment variable not set")
-		_set_status("Error: ELEVENLABS_API_KEY not set.")
-		return
+		return false
 
+	_set_status("Generating SFX via cloud (ElevenLabs)...")
 	var body := {
 		"text": prompt_text,
 		"duration_seconds": null,
@@ -225,17 +266,21 @@ func _generate_sfx(prompt_text: String) -> void:
 		JSON.stringify(body),
 	)
 	if result.is_empty():
-		return
+		return false
 
 	var file_path := _build_output_path("sfx", prompt_text, "mp3")
 	_save_bytes(file_path, result["body_raw"])
+	return true
 
 
 # ---------------------------------------------------------------------------
 # SFX generation — Local (AudioCraft wrapper)
 # ---------------------------------------------------------------------------
 
-func _generate_sfx_local(prompt_text: String, url: String) -> void:
+func _ensure_local_and_generate_sfx(prompt_text: String) -> void:
+	var url := await _ensure_local_server("LOCAL_SFX_URL", LOCAL_SFX_API_URL, "LOCAL_SFX_START_CMD")
+	if url.is_empty():
+		return
 	_set_status("Generating SFX via local server...")
 	var body := {
 		"text": prompt_text,
@@ -258,13 +303,12 @@ func _generate_sfx_local(prompt_text: String, url: String) -> void:
 # Music generation — Cloud (Suno via Replicate)
 # ---------------------------------------------------------------------------
 
-func _generate_music(prompt_text: String) -> void:
+func _try_generate_music_cloud(prompt_text: String) -> bool:
 	var api_key := _get_env("REPLICATE_API_TOKEN")
 	if api_key.is_empty():
-		push_error("AIAssetDock: REPLICATE_API_TOKEN environment variable not set")
-		_set_status("Error: REPLICATE_API_TOKEN not set.")
-		return
+		return false
 
+	_set_status("Generating music via cloud (Replicate)...")
 	var body := {
 		"version": "7a76a8258b23fae65c5a22debb8841d1d7e816b75c2f24218cd2bd8573787906",
 		"input": {
@@ -281,36 +325,39 @@ func _generate_music(prompt_text: String) -> void:
 
 	var result := await fetch_async(MUSIC_API_URL, headers, JSON.stringify(body))
 	if result.is_empty():
-		return
+		return false
 
 	var json: Dictionary = _parse_json(result["body"])
 	if json.is_empty():
-		return
+		return false
 
 	if not json.has("urls") or not (json["urls"] as Dictionary).has("get"):
-		_set_status("Error: unexpected Replicate response — no poll URL.")
-		return
+		return false
 
 	var poll_url: String = json["urls"]["get"]
 	_set_status("Music generation started. Polling for result...")
 
 	var audio_url := await _poll_replicate(poll_url, headers)
 	if audio_url.is_empty():
-		return
+		return false
 
 	var audio_result := await fetch_async(audio_url, PackedStringArray([]), "", HTTPClient.METHOD_GET)
 	if audio_result.is_empty():
-		return
+		return false
 
 	var file_path := _build_output_path("music", prompt_text, "mp3")
 	_save_bytes(file_path, audio_result["body_raw"])
+	return true
 
 
 # ---------------------------------------------------------------------------
 # Music generation — Local (MusicGen via AudioCraft wrapper)
 # ---------------------------------------------------------------------------
 
-func _generate_music_local(prompt_text: String, url: String) -> void:
+func _ensure_local_and_generate_music(prompt_text: String) -> void:
+	var url := await _ensure_local_server("LOCAL_MUSIC_URL", LOCAL_MUSIC_API_URL, "LOCAL_MUSIC_START_CMD")
+	if url.is_empty():
+		return
 	_set_status("Generating music via local server...")
 	var body := {
 		"text": prompt_text,
