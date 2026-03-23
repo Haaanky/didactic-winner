@@ -181,7 +181,7 @@ position = Vector2(750, 460)
 position = Vector2(500, 200)
 
 [node name="FishingSpot1" parent="World/Objects" instance=ExtResource("13_fish")]
-position = Vector2(640, 580)
+position = Vector2(640, 565)
 
 [node name="RockDeposit1" parent="World/Objects" instance=ExtResource("14_rock")]
 position = Vector2(200, 350)
@@ -291,3 +291,4 @@ position = Vector2(780, 300)
 
 [node name="BuildMode" type="Node" parent="."]
 script = ExtResource("25_buildmode")
+build_menu_ui = NodePath("../BuildMenu")

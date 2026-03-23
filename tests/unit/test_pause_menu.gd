@@ -139,3 +139,41 @@ func test_escape_key_when_hidden_does_nothing() -> void:
 	key.keycode = KEY_ESCAPE
 	_menu._input(key)
 	assert_signal_not_emitted(EventBus, "game_paused")
+
+
+# ── Mouse: clicks route through _input when paused ────────────────────────────
+
+func test_mouse_click_on_resume_when_visible_emits_game_paused_false() -> void:
+	_menu.show()
+	await get_tree().process_frame
+	watch_signals(EventBus)
+	var mb := InputEventMouseButton.new()
+	mb.pressed = true
+	mb.button_index = MOUSE_BUTTON_LEFT
+	mb.position = _menu.resume_button.get_global_rect().get_center()
+	_menu._input(mb)
+	assert_signal_emitted_with_parameters(EventBus, "game_paused", [false])
+	get_tree().paused = false
+
+
+func test_mouse_click_on_save_button_when_visible_emits_ui_screen_opened_save_load() -> void:
+	_menu.show()
+	await get_tree().process_frame
+	watch_signals(EventBus)
+	var mb := InputEventMouseButton.new()
+	mb.pressed = true
+	mb.button_index = MOUSE_BUTTON_LEFT
+	mb.position = _menu.save_button.get_global_rect().get_center()
+	_menu._input(mb)
+	assert_signal_emitted_with_parameters(EventBus, "ui_screen_opened", ["save_load"])
+	get_tree().paused = false
+
+
+func test_mouse_click_when_hidden_does_nothing() -> void:
+	watch_signals(EventBus)
+	var mb := InputEventMouseButton.new()
+	mb.pressed = true
+	mb.button_index = MOUSE_BUTTON_LEFT
+	mb.position = Vector2(640, 360)
+	_menu._input(mb)
+	assert_signal_not_emitted(EventBus, "game_paused")

@@ -29,6 +29,19 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			_on_resume_pressed()
 			return
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+			if resume_button.get_global_rect().has_point(mb.position):
+				get_viewport().set_input_as_handled()
+				_on_resume_pressed()
+			elif save_button.get_global_rect().has_point(mb.position):
+				get_viewport().set_input_as_handled()
+				_on_save_pressed()
+			elif menu_button.get_global_rect().has_point(mb.position):
+				get_viewport().set_input_as_handled()
+				_on_menu_pressed()
+		return
 	if not (event is InputEventScreenTouch):
 		return
 	var touch := event as InputEventScreenTouch

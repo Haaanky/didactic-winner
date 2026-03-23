@@ -23,25 +23,26 @@ func _ready() -> void:
 	close_button.pressed.connect(_close)
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not _is_open:
-		return
-	if event.is_action_pressed("open_journal") or event.is_action_pressed("pause"):
-		get_viewport().set_input_as_handled()
-		_close()
-
-
 func _input(event: InputEvent) -> void:
 	if not _is_open:
 		return
-	if not (event is InputEventScreenTouch):
-		return
-	var touch := event as InputEventScreenTouch
-	if not touch.pressed:
-		return
-	if close_button != null and close_button.get_global_rect().has_point(touch.position):
-		get_viewport().set_input_as_handled()
-		_close()
+	if event is InputEventKey:
+		var key := event as InputEventKey
+		if key.pressed and not key.echo:
+			if event.is_action_pressed("open_journal") or event.is_action_pressed("pause"):
+				get_viewport().set_input_as_handled()
+				_close()
+	elif event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+			if close_button != null and close_button.get_global_rect().has_point(mb.position):
+				get_viewport().set_input_as_handled()
+				_close()
+	elif event is InputEventScreenTouch:
+		var touch := event as InputEventScreenTouch
+		if touch.pressed and close_button != null and close_button.get_global_rect().has_point(touch.position):
+			get_viewport().set_input_as_handled()
+			_close()
 
 
 func _on_journal_entry_added(entry: String) -> void:

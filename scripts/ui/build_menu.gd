@@ -1,5 +1,5 @@
 class_name BuildMenu
-extends Control
+extends CanvasLayer
 
 ## Displayed when the player presses the build_mode action.
 ## Lists buildable structures. Selecting one enters placement mode.

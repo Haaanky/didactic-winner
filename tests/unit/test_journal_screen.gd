@@ -75,3 +75,31 @@ func test_touch_on_close_button_closes() -> void:
 	touch.position = _journal.close_button.get_global_rect().get_center()
 	_journal._input(touch)
 	assert_false(_journal._is_open)
+
+
+func test_keyboard_open_journal_action_in_input_closes_journal() -> void:
+	_journal._open()
+	var key := InputEventKey.new()
+	key.pressed = true
+	key.physical_keycode = KEY_J
+	_journal._input(key)
+	assert_false(_journal._is_open)
+
+
+func test_mouse_click_on_close_button_closes_journal() -> void:
+	_journal._open()
+	await get_tree().process_frame
+	var mb := InputEventMouseButton.new()
+	mb.pressed = true
+	mb.button_index = MOUSE_BUTTON_LEFT
+	mb.position = _journal.close_button.get_global_rect().get_center()
+	_journal._input(mb)
+	assert_false(_journal._is_open)
+
+
+func test_keyboard_close_when_not_open_does_nothing() -> void:
+	var key := InputEventKey.new()
+	key.pressed = true
+	key.physical_keycode = KEY_J
+	_journal._input(key)
+	assert_false(_journal._is_open)

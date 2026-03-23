@@ -87,3 +87,27 @@ func test_touch_on_close_button_closes_screen() -> void:
 	touch.position = _screen.close_button.get_global_rect().get_center()
 	_screen._input(touch)
 	assert_false(_screen.visible)
+
+
+func test_mouse_click_on_craft_button_emits_crafting_opened() -> void:
+	_screen.open()
+	await get_tree().process_frame
+	watch_signals(EventBus)
+	var mb := InputEventMouseButton.new()
+	mb.pressed = true
+	mb.button_index = MOUSE_BUTTON_LEFT
+	mb.position = _screen.craft_button.get_global_rect().get_center()
+	_screen._input(mb)
+	assert_signal_emitted(EventBus, "crafting_opened")
+	get_tree().paused = false
+
+
+func test_mouse_click_on_close_button_closes_screen() -> void:
+	_screen.open()
+	await get_tree().process_frame
+	var mb := InputEventMouseButton.new()
+	mb.pressed = true
+	mb.button_index = MOUSE_BUTTON_LEFT
+	mb.position = _screen.close_button.get_global_rect().get_center()
+	_screen._input(mb)
+	assert_false(_screen.visible)

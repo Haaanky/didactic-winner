@@ -29,6 +29,13 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if not _is_open:
 		return
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT:
+			if close_button.get_global_rect().has_point(mb.position):
+				get_viewport().set_input_as_handled()
+				_close()
+		return
 	if event is InputEventScreenTouch:
 		var touch := event as InputEventScreenTouch
 		if touch.pressed and close_button.get_global_rect().has_point(touch.position):
