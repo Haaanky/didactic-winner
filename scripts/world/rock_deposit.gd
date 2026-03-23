@@ -14,6 +14,7 @@ const YIELD_MAX: int = 5
 const REGROW_HOURS: int = 72
 const XP_PER_MINE: float = 8.0
 const DEPLETED_MODULATE: Color = Color(0.5, 0.5, 0.55, 1.0)
+const _MINE_SFX: AudioStream = preload("res://assets/audio/rock_mine.wav")
 
 @export var rock_sprite: Sprite2D
 @export var interact_area: StaticBody2D
@@ -49,6 +50,7 @@ func _mine(player: PlayerController) -> void:
 		player.skills.add_xp(SkillComponent.Skill.CARPENTRY, XP_PER_MINE)
 	var yield_count: int = YIELD_MIN + _rng.randi_range(0, YIELD_MAX - YIELD_MIN)
 	yield_count += skill_level / 3
+	AudioManager.play_sfx(_MINE_SFX, global_position)
 	has_stones = false
 	_hours_until_regrow = REGROW_HOURS
 	if player.inventory != null:

@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://bicycle001"]
+[gd_scene load_steps=4 format=3 uid="uid://bicycle001"]
 
 [ext_resource type="Script" uid="uid://scrbicycle1" path="res://scripts/world/bicycle.gd" id="1_bicycle"]
+[ext_resource type="Texture2D" path="res://assets/sprites/bicycle.png" id="2_bicycletex"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_1"]
 radius = 10.0
@@ -15,4 +16,5 @@ script = ExtResource("1_bicycle")
 shape = SubResource("CapsuleShape2D_1")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-modulate = Color(0.3, 0.5, 0.9, 1)
+texture = ExtResource("2_bicycletex")
+scale = Vector2(0.06, 0.06)

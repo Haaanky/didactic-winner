@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://fishspot001"]
+[gd_scene load_steps=4 format=3 uid="uid://fishspot001"]
 
 [ext_resource type="Script" path="res://scripts/world/fishing_spot.gd" id="1_fish"]
+[ext_resource type="Texture2D" path="res://assets/sprites/fishing_spot.png" id="2_fishtex"]
 
 [sub_resource type="RectangleShape2D" id="1_interactshape"]
 size = Vector2(48, 24)
@@ -8,13 +9,12 @@ size = Vector2(48, 24)
 [node name="FishingSpot" type="Node2D"]
 script = ExtResource("1_fish")
 
-[node name="WaterMarker" type="ColorRect" parent="."]
-position = Vector2(-32, -8)
-size = Vector2(64, 24)
-color = Color(0.15, 0.45, 0.80, 0.75)
+[node name="FishingSprite" type="Sprite2D" parent="."]
+texture = ExtResource("2_fishtex")
+scale = Vector2(0.065, 0.065)
 
 [node name="DockLabel" type="Label" parent="."]
-position = Vector2(-24, -26)
+position = Vector2(-24, -38)
 text = "~ Fishing Spot ~"
 theme_override_font_sizes/font_size = 11
 modulate = Color(0.9, 0.95, 1, 0.85)

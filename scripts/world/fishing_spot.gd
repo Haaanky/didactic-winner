@@ -18,6 +18,7 @@ const BITE_TIME_MAX: float = 10.0
 const BITE_WINDOW: float = 2.5
 const COOLDOWN_TIME: float = 3.0
 const XP_PER_CATCH: float = 15.0
+const _CATCH_SFX: AudioStream = preload("res://assets/audio/fish_catch.wav")
 
 @export var water_sprite: Sprite2D
 @export var fishing_area: StaticBody2D
@@ -108,6 +109,7 @@ func _catch_fish(player: PlayerController) -> void:
 	var extra: int = skill_level / 3
 	if player.inventory != null:
 		player.inventory.add_item(FISH_ITEM_ID, 1 + extra, FISH_WEIGHT)
+	AudioManager.play_sfx(_CATCH_SFX, global_position)
 	EventBus.fish_caught.emit(FISH_ITEM_ID)
 	EventBus.journal_entry_added.emit("Caught a fish! Cook it at the campfire [E near fire].")
 	fish_caught_here.emit(FISH_ITEM_ID)

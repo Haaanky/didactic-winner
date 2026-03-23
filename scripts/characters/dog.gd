@@ -9,6 +9,7 @@ enum DogState { STRAY, FOLLOWING }
 const FOLLOW_SPEED: float = 180.0
 const FOLLOW_DISTANCE: float = 64.0
 const ADOPT_RADIUS: float = 80.0
+const _BARK_SFX: AudioStream = preload("res://assets/audio/dog_bark.wav")
 
 @export var dog_name: String = "Kodiak"
 
@@ -69,6 +70,7 @@ func interact(_player: PlayerController) -> void:
 	if not _player_in_range:
 		return
 	_state = DogState.FOLLOWING
+	AudioManager.play_sfx(_BARK_SFX, global_position)
 	EventBus.interact_prompt_changed.emit("")
 	EventBus.journal_entry_added.emit("%s has decided to follow you." % dog_name)
 	EventBus.companion_adopted.emit(dog_name)

@@ -18,6 +18,14 @@ const BLIZZARD_TRACK: String = "res://assets/audio/blizzard.wav"
 const SFX_MENU_CLICK: String = "res://assets/audio/menu_click.wav"
 const SFX_FOOTSTEP_SNOW: String = "res://assets/audio/footstep_snow.wav"
 const SFX_FOOTSTEP_GRASS: String = "res://assets/audio/footstep_grass.wav"
+const SFX_TREE_CHOP: String = "res://assets/audio/tree_chop.wav"
+const SFX_BERRY_PICK: String = "res://assets/audio/berry_pick.wav"
+const SFX_ROCK_MINE: String = "res://assets/audio/rock_mine.wav"
+const SFX_FISH_CATCH: String = "res://assets/audio/fish_catch.wav"
+const SFX_ITEM_PICKUP: String = "res://assets/audio/item_pickup.wav"
+const SFX_CAMPFIRE_IGNITE: String = "res://assets/audio/campfire_ignite.wav"
+const SFX_DEER_STARTLE: String = "res://assets/audio/deer_startle.wav"
+const SFX_DOG_BARK: String = "res://assets/audio/dog_bark.wav"
 
 const CROSSFADE_DURATION: float = 2.0
 const VOLUME_SILENT_DB: float = -80.0
