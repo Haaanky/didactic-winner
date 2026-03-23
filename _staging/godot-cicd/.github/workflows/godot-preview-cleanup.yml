@@ -1,0 +1,43 @@
+name: Clean Up Godot Branch Preview
+
+on:
+  workflow_call:
+    inputs:
+      branch_prefix:
+        description: "Branch prefix for which previews should be cleaned up (e.g. claude/)"
+        type: string
+        default: "claude/"
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    name: Remove Preview Directory
+    if: startsWith(github.head_ref, inputs.branch_prefix)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compute branch slug
+        id: slug
+        run: |
+          SLUG="${{ github.head_ref }}"
+          SLUG="${SLUG//\//-}"
+          echo "value=${SLUG}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout gh-pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+
+      - name: Remove preview directory
+        run: |
+          PREVIEW_DIR="preview/${{ steps.slug.outputs.value }}"
+          if [ -d "${PREVIEW_DIR}" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git rm -rf "${PREVIEW_DIR}"
+            git commit -m "Remove preview for ${{ github.head_ref }}"
+            git push
+          else
+            echo "Preview directory ${PREVIEW_DIR} not found — nothing to clean up."
+          fi

@@ -1,0 +1,123 @@
+name: Godot Export, Deploy and E2E Test
+
+on:
+  workflow_call:
+    inputs:
+      godot_version:
+        description: "Godot version to use (e.g. 4.6.1)"
+        type: string
+        default: "4.6.1"
+      godot_release:
+        description: "Godot release type (stable or rc1 etc)"
+        type: string
+        default: "stable"
+      game_url:
+        description: "URL of the deployed game for E2E tests"
+        type: string
+        required: true
+      run_gut_tests:
+        description: "Run GUT unit tests before export"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  export:
+    name: Export and Deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install Godot
+        run: |
+          FILENAME="Godot_v${{ inputs.godot_version }}-${{ inputs.godot_release }}_linux.x86_64"
+          wget -q \
+            "https://github.com/godotengine/godot/releases/download/${{ inputs.godot_version }}-${{ inputs.godot_release }}/${FILENAME}.zip" \
+            -O /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/
+          sudo install -m 755 "/tmp/${FILENAME}" /usr/local/bin/godot
+
+      - name: Install export templates
+        run: |
+          TPZNAME="Godot_v${{ inputs.godot_version }}-${{ inputs.godot_release }}_export_templates.tpz"
+          wget -q \
+            "https://github.com/godotengine/godot/releases/download/${{ inputs.godot_version }}-${{ inputs.godot_release }}/${TPZNAME}" \
+            -O /tmp/templates.tpz
+          mkdir -p ~/.local/share/godot/export_templates/${{ inputs.godot_version }}.${{ inputs.godot_release }}
+          unzip -q /tmp/templates.tpz -d /tmp/godot-templates/
+          mv /tmp/godot-templates/templates/* \
+            ~/.local/share/godot/export_templates/${{ inputs.godot_version }}.${{ inputs.godot_release }}/
+
+      - name: Import assets
+        run: godot --headless --import || true
+
+      - name: Run GUT unit tests
+        if: inputs.run_gut_tests
+        run: |
+          godot --headless --import || true
+          godot --headless -s addons/gut/gut_cmdln.gd \
+            -gdir=res://tests/unit -ginclude_subdirs -gexit
+
+      - name: Export Web build
+        run: |
+          mkdir -vp build/web
+          godot --headless --export-release "Web" build/web/index.html
+
+      - name: Add Cross-Origin Isolation service worker
+        run: |
+          curl -fsSL -o build/web/coi-serviceworker.js \
+            https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker@master/coi-serviceworker.js
+          sed -i 's|</head>|<script src="coi-serviceworker.js"></script>\n</head>|' build/web/index.html
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  playwright:
+    name: Playwright E2E Tests
+    needs: export
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        env:
+          GAME_URL: ${{ inputs.game_url }}
+        run: npx playwright test --reporter=list
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14

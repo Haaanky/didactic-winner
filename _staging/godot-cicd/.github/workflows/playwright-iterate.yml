@@ -1,0 +1,135 @@
+name: Playwright Iterate
+
+on:
+  workflow_call:
+    inputs:
+      game_url:
+        description: "Game URL to test (defaults to derived GitHub Pages URL)"
+        type: string
+        default: ""
+      schedule_cron:
+        description: "Cron expression for scheduled runs (default: every 30 minutes)"
+        type: string
+        default: "*/30 * * * *"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  playwright:
+    name: Playwright E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        id: playwright
+        env:
+          GAME_URL: ${{ inputs.game_url || format('https://{0}.github.io/{1}', github.repository_owner, github.event.repository.name) }}
+        run: |
+          npx playwright test --reporter=json > playwright-results.json 2>&1 || true
+          npx playwright test --reporter=list 2>&1 | tee playwright-output.txt || true
+          npx playwright test --reporter=dot 2>/dev/null; echo "EXIT_CODE=$?" >> $GITHUB_OUTPUT
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ github.run_id }}
+          path: |
+            playwright-report/
+            playwright-results.json
+            playwright-output.txt
+          retention-days: 7
+
+      - name: Open issue on failure
+        if: steps.playwright.outputs.EXIT_CODE != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const output = fs.existsSync('playwright-output.txt')
+              ? fs.readFileSync('playwright-output.txt', 'utf8').slice(-4000)
+              : '(no output)';
+
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'playwright-failure',
+            });
+
+            const title = '🎭 Playwright tests failing on GitHub Pages';
+            const body = [
+              `**Run:** [#${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+              `**Triggered:** ${context.eventName}`,
+              `**Ref:** ${context.ref}`,
+              '',
+              '### Failing tests (last 4 KB of output)',
+              '```',
+              output,
+              '```',
+              '',
+              '> This issue is auto-managed by the `playwright-iterate` workflow.',
+              '> It will be closed automatically when tests pass.',
+            ].join('\n');
+
+            if (issues.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues[0].number,
+                body,
+              });
+              console.log(`Updated existing issue #${issues[0].number}`);
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['playwright-failure'],
+              });
+              console.log('Created new failure issue');
+            }
+
+      - name: Close failure issue on success
+        if: steps.playwright.outputs.EXIT_CODE == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'playwright-failure',
+            });
+            for (const issue of issues) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `✅ All Playwright tests are passing again as of run [#${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}). Closing.`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+              });
+              console.log(`Closed issue #${issue.number}`);
+            }
