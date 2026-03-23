@@ -13,6 +13,8 @@ enum BuildState { CLOSED, MENU_OPEN, PLACING }
 
 const PLACEMENT_RANGE: float = 160.0
 
+@export var build_menu_ui: BuildMenu
+
 var player: CharacterBody2D
 
 var _state: BuildState = BuildState.CLOSED
@@ -45,6 +47,8 @@ func close_menu() -> void:
 		return
 	_state = BuildState.CLOSED
 	_selected_recipe = ""
+	if is_instance_valid(build_menu_ui):
+		build_menu_ui.close()
 	build_menu_closed.emit()
 
 

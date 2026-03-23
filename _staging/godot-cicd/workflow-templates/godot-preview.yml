@@ -1,0 +1,154 @@
+name: Godot Branch Preview Build
+
+on:
+  workflow_call:
+    inputs:
+      godot_version:
+        description: "Godot version to use (e.g. 4.6.1)"
+        type: string
+        default: "4.6.1"
+      godot_release:
+        description: "Godot release type"
+        type: string
+        default: "stable"
+      branch_pattern:
+        description: "Branch pattern that triggers previews (e.g. claude/**)"
+        type: string
+        default: "claude/**"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: gh-pages-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    name: Build and Deploy Preview
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Install Godot
+        run: |
+          FILENAME="Godot_v${{ inputs.godot_version }}-${{ inputs.godot_release }}_linux.x86_64"
+          wget -q \
+            "https://github.com/godotengine/godot/releases/download/${{ inputs.godot_version }}-${{ inputs.godot_release }}/${FILENAME}.zip" \
+            -O /tmp/godot.zip
+          unzip -q /tmp/godot.zip -d /tmp/
+          sudo install -m 755 "/tmp/${FILENAME}" /usr/local/bin/godot
+
+      - name: Install export templates
+        run: |
+          TPZNAME="Godot_v${{ inputs.godot_version }}-${{ inputs.godot_release }}_export_templates.tpz"
+          wget -q \
+            "https://github.com/godotengine/godot/releases/download/${{ inputs.godot_version }}-${{ inputs.godot_release }}/${TPZNAME}" \
+            -O /tmp/templates.tpz
+          mkdir -p ~/.local/share/godot/export_templates/${{ inputs.godot_version }}.${{ inputs.godot_release }}
+          unzip -q /tmp/templates.tpz -d /tmp/godot-templates/
+          mv /tmp/godot-templates/templates/* \
+            ~/.local/share/godot/export_templates/${{ inputs.godot_version }}.${{ inputs.godot_release }}/
+
+      - name: Import assets
+        run: godot --headless --import || true
+
+      - name: Export Web build
+        run: |
+          mkdir -vp build/web
+          godot --headless --export-release "Web" build/web/index.html
+
+      - name: Add Cross-Origin Isolation service worker
+        run: |
+          curl -fsSL -o build/web/coi-serviceworker.js \
+            https://cdn.jsdelivr.net/gh/gzuidhof/coi-serviceworker@master/coi-serviceworker.js
+          sed -i 's|</head>|<script src="coi-serviceworker.js"></script>\n</head>|' build/web/index.html
+
+      - name: Verify build artifacts
+        run: |
+          echo "Build contents:"
+          ls -lh build/web/
+          echo "WASM size: $(du -sh build/web/index.wasm 2>/dev/null || echo 'missing')"
+          echo "PCK size:  $(du -sh build/web/index.pck  2>/dev/null || echo 'missing')"
+          test -f build/web/index.html
+          test -f build/web/index.wasm
+          test -f build/web/index.pck
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build-${{ github.sha }}
+          path: build/web/
+          retention-days: 7
+
+      - name: Compute branch slug
+        id: slug
+        run: |
+          SLUG="${{ github.ref_name }}"
+          SLUG="${SLUG//\//-}"
+          echo "value=${SLUG}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy preview to gh-pages
+        run: |
+          PREVIEW_DIR="preview/${{ steps.slug.outputs.value }}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin gh-pages
+          git worktree add /tmp/gh-pages origin/gh-pages
+
+          rm -rf "/tmp/gh-pages/${PREVIEW_DIR}"
+          mkdir -p "/tmp/gh-pages/${PREVIEW_DIR}"
+          cp -r build/web/. "/tmp/gh-pages/${PREVIEW_DIR}/"
+
+          cd /tmp/gh-pages
+          git add "${PREVIEW_DIR}"
+          git commit -m "Deploy preview for ${{ github.ref_name }} @ ${{ github.sha }}" || echo "Nothing to commit"
+          git push origin HEAD:gh-pages
+
+      - name: Post build status to PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          SHA: ${{ github.sha }}
+          SLUG: ${{ steps.slug.outputs.value }}
+        run: |
+          PR_NUMBER=$(gh pr list \
+            --repo "${OWNER}/${REPO}" \
+            --head "${{ github.ref_name }}" \
+            --state open \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -z "${PR_NUMBER}" ]; then
+            echo "No open PR found for this branch — skipping comment."
+            exit 0
+          fi
+
+          MARKER="<!-- preview-bot -->"
+          WASM_MB=$(du -m build/web/index.wasm | cut -f1)
+          PCK_MB=$(du -m build/web/index.pck | cut -f1)
+          PREVIEW_URL="https://${OWNER}.github.io/${REPO}/preview/${SLUG}/"
+          BODY=$(printf '%s\n**Web preview deployed** for commit `%s`\n\n| File | Size |\n|------|------|\n| index.wasm | %s MB |\n| index.pck | %s MB |\n\n**Preview URL:** %s\n\n*Preview is removed automatically when this PR is closed.*' \
+            "${MARKER}" "${SHA:0:7}" "${WASM_MB}" "${PCK_MB}" "${PREVIEW_URL}")
+
+          EXISTING=$(gh api \
+            "repos/${OWNER}/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | startswith(\"${MARKER}\")) | .id" \
+            | head -1)
+
+          if [ -n "${EXISTING}" ]; then
+            gh api --method PATCH \
+              "repos/${OWNER}/${REPO}/issues/comments/${EXISTING}" \
+              -f body="${BODY}"
+          else
+            gh pr comment "${PR_NUMBER}" \
+              --repo "${OWNER}/${REPO}" \
+              --body "${BODY}"
+          fi

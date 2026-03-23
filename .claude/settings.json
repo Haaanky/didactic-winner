@@ -7,6 +7,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
             "command": "echo '[playwright-iterate] Scheduling recurring Playwright suite via /loop …'; echo 'Hint: run /loop 30m node scripts/playwright_iterate.js to start the cron job.'"
           }
         ]

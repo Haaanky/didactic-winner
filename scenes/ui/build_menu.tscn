@@ -2,13 +2,8 @@
 
 [ext_resource type="Script" uid="uid://scrbuildmenu1" path="res://scripts/ui/build_menu.gd" id="1_buildmenu"]
 
-[node name="BuildMenu" type="Control"]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="BuildMenu" type="CanvasLayer"]
+layer = 10
 script = ExtResource("1_buildmenu")
 
 [node name="Background" type="ColorRect" parent="."]

@@ -100,3 +100,14 @@ func test_touch_on_close_button_closes_screen() -> void:
 	touch.position = _screen.close_button.get_global_rect().get_center()
 	_screen._input(touch)
 	assert_false(_screen.visible)
+
+
+func test_mouse_click_on_close_button_closes_screen() -> void:
+	_screen.open(false)
+	await get_tree().process_frame
+	var mb := InputEventMouseButton.new()
+	mb.pressed = true
+	mb.button_index = MOUSE_BUTTON_LEFT
+	mb.position = _screen.close_button.get_global_rect().get_center()
+	_screen._input(mb)
+	assert_false(_screen.visible)
