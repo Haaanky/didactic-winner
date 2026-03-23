@@ -13,47 +13,47 @@ Reusable GitHub Actions workflows for Godot 4 projects.
 
 ## Usage in your project
 
-In your game repo's `.github/workflows/deploy.yml`:
+Copy the workflow files from `workflow-templates/` into your game repo's `.github/workflows/` directory and adjust the inputs.
+
+**Example `.github/workflows/deploy.yml` in your game repo:**
 
 ```yaml
-name: Deploy
+name: Export, Deploy and E2E Test
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+env:
+  GODOT_VERSION: "4.6.1"
+  GODOT_RELEASE: "stable"
+
 jobs:
-  deploy:
-    uses: Haaanky/godot-cicd/.github/workflows/godot-export-deploy.yml@main
-    with:
-      godot_version: "4.6.1"
-      game_url: "https://your-username.github.io/your-repo/"
-    secrets: inherit
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
+  export:
+    name: Export and Deploy
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    # ... (copy from workflow-templates/godot-export-deploy.yml and fill in your GAME_URL)
 ```
 
-In your game repo's `.github/workflows/preview.yml`:
+Or copy the file directly:
 
-```yaml
-name: Branch Preview
-
-on:
-  push:
-    branches: ["claude/**"]
-
-jobs:
-  preview:
-    uses: Haaanky/godot-cicd/.github/workflows/godot-preview.yml@main
-    with:
-      godot_version: "4.6.1"
-    secrets: inherit
-    permissions:
-      contents: write
-      pull-requests: write
+```bash
+mkdir -p .github/workflows
+cp path/to/godot-cicd/workflow-templates/godot-export-deploy.yml .github/workflows/deploy.yml
+# Edit the file to set your GAME_URL and GODOT_VERSION
 ```
 
 ## E2E tests
@@ -67,20 +67,17 @@ The test file reads `GAME_URL` from the environment — no hardcoded URLs.
 
 ```
 godot-cicd/
-├── .github/
-│   └── workflows/
-│       ├── godot-export-deploy.yml
-│       ├── godot-preview.yml
-│       ├── godot-preview-cleanup.yml
-│       └── playwright-iterate.yml
+├── workflow-templates/
+│   ├── godot-export-deploy.yml    # copy to .github/workflows/ in your game repo
+│   ├── godot-preview.yml
+│   ├── godot-preview-cleanup.yml
+│   └── playwright-iterate.yml
 ├── tests/
 │   └── e2e/
 │       └── game.test.js           # template — copy to your project
 ├── config/
 │   ├── playwright.config.js       # template — copy to your project
 │   └── package.json               # template — copy to your project
-├── docs/
-│   └── README.md
 ├── .gitignore
 └── README.md
 ```

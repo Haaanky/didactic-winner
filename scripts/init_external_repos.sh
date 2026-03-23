@@ -1,102 +1,134 @@
 #!/usr/bin/env bash
 # init_external_repos.sh — Create GitHub repos from _staging/ and push content.
 #
+# Uses GitHub Contents API to upload files one by one — works on empty repos
+# without requiring git or commit signing.
+#
 # Requirements:
-#   - GITHUB_TOKEN env var with repo + administration write permissions, OR
-#   - gh CLI authenticated via 'gh auth login'
-#   - git, curl, jq
+#   - GITHUB_TOKEN env var with repo + administration write permissions
+#   - curl, jq, find, base64
 #
 # Usage:
 #   GITHUB_TOKEN=<token> ./scripts/init_external_repos.sh
-#
-# What it does:
-#   1. Creates Haaanky/game-dev-tools (public) on GitHub
-#   2. Creates Haaanky/godot-cicd (public) on GitHub
-#   3. Pushes _staging/game-dev-tools/ content to the new repo
-#   4. Pushes _staging/godot-cicd/ content to the new repo
-#
-# Safe to re-run: existing repos are not modified, only content is pushed.
 
 set -euo pipefail
 
 GITHUB_OWNER="Haaanky"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+API="https://api.github.com"
 
 REPOS=(
   "game-dev-tools:Generic AI asset generation tools for game and app development"
   "godot-cicd:Reusable GitHub Actions workflows for Godot 4 projects"
 )
 
-# ---- Auth detection ----
-
-detect_auth() {
-  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    echo "token"
-    return 0
-  fi
-  if command -v gh &>/dev/null && gh auth status &>/dev/null 2>&1; then
-    echo "gh"
-    return 0
-  fi
-  echo "none"
-}
-
-AUTH_METHOD="$(detect_auth)"
-
-if [[ "$AUTH_METHOD" == "none" ]]; then
-  echo "ERROR: No GitHub authentication found." >&2
-  echo "  Option A: export GITHUB_TOKEN=<your-fine-grained-pat>" >&2
-  echo "  Option B: gh auth login" >&2
+if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+  echo "ERROR: GITHUB_TOKEN not set." >&2
   exit 1
 fi
 
-echo "Auth method: $AUTH_METHOD"
-
-# ---- Create repo ----
-
-create_repo() {
-  local repo_name="$1" description="$2"
-
-  echo "Creating $GITHUB_OWNER/$repo_name..."
-
-  if [[ "$AUTH_METHOD" == "gh" ]]; then
-    if gh repo view "$GITHUB_OWNER/$repo_name" &>/dev/null 2>&1; then
-      echo "  Repo already exists — skipping creation."
-      return 0
-    fi
-    gh repo create "$GITHUB_OWNER/$repo_name" \
-      --public \
-      --description "$description" \
-      --source /dev/null 2>/dev/null || true
-    echo "  Created."
-  else
-    local response http_code
-    response="$(curl -sS -w "\n%{http_code}" \
-      -X POST "https://api.github.com/user/repos" \
+api() {
+  local method="$1" path="$2" data="${3:-}"
+  if [[ -n "$data" ]]; then
+    curl -sS -w "\n%{http_code}" \
+      -X "$method" "$API$path" \
       -H "Authorization: Bearer $GITHUB_TOKEN" \
       -H "Accept: application/vnd.github+json" \
       -H "X-GitHub-Api-Version: 2022-11-28" \
-      -d "$(jq -n \
-        --arg name "$repo_name" \
-        --arg desc "$description" \
-        '{name: $name, description: $desc, private: false, auto_init: false}')")"
-    http_code="$(echo "$response" | tail -n1)"
-    response="$(echo "$response" | head -n -1)"
-
-    if [[ "$http_code" == "201" ]]; then
-      echo "  Created."
-    elif [[ "$http_code" == "422" ]]; then
-      echo "  Repo already exists — skipping creation."
-    else
-      echo "  ERROR: GitHub API returned HTTP $http_code" >&2
-      echo "  Response: $(echo "$response" | head -c 200)" >&2
-      return 1
-    fi
+      -d "$data"
+  else
+    curl -sS -w "\n%{http_code}" \
+      -X "$method" "$API$path" \
+      -H "Authorization: Bearer $GITHUB_TOKEN" \
+      -H "Accept: application/vnd.github+json" \
+      -H "X-GitHub-Api-Version: 2022-11-28"
   fi
 }
 
-# ---- Push staging content ----
+# ---- Create repo (delete + recreate if already empty) ----
+
+ensure_repo() {
+  local repo_name="$1" description="$2"
+  echo "Ensuring $GITHUB_OWNER/$repo_name exists..."
+
+  # Check if repo exists
+  local check_code
+  check_code="$(curl -sS -o /dev/null -w "%{http_code}" \
+    -H "Authorization: Bearer $GITHUB_TOKEN" \
+    -H "Accept: application/vnd.github+json" \
+    "$API/repos/$GITHUB_OWNER/$repo_name")"
+
+  if [[ "$check_code" == "200" ]]; then
+    echo "  Exists — will overwrite content."
+  else
+    echo "  Creating..."
+    local resp
+    resp="$(api POST /user/repos "$(jq -n \
+      --arg name "$repo_name" \
+      --arg desc "$description" \
+      '{name: $name, description: $desc, private: false, auto_init: false}')")"
+    local code
+    code="$(echo "$resp" | tail -n1)"
+    [[ "$code" == "201" ]] || { echo "  ERROR: HTTP $code"; echo "$resp" | head -n -1; return 1; }
+    echo "  Created."
+  fi
+}
+
+# ---- Upload one file via Contents API ----
+
+upload_file() {
+  local repo_name="$1" abs_path="$2" rel_path="$3"
+  local content_b64
+  content_b64="$(base64 -w 0 "$abs_path")"
+
+  # Check if file already exists (need its SHA to update)
+  local existing_sha=""
+  local check_resp
+  check_resp="$(curl -sS -o /tmp/_ga_check -w "%{http_code}" \
+    -H "Authorization: Bearer $GITHUB_TOKEN" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    "$API/repos/$GITHUB_OWNER/$repo_name/contents/$rel_path")"
+
+  if [[ "$check_resp" == "200" ]]; then
+    existing_sha="$(jq -r '.sha' /tmp/_ga_check)"
+  fi
+
+  # Build payload
+  local payload
+  if [[ -n "$existing_sha" ]]; then
+    payload="$(jq -n \
+      --arg msg "Add $rel_path" \
+      --arg content "$content_b64" \
+      --arg sha "$existing_sha" \
+      '{message: $msg, content: $content, sha: $sha}')"
+  else
+    payload="$(jq -n \
+      --arg msg "Add $rel_path" \
+      --arg content "$content_b64" \
+      '{message: $msg, content: $content}')"
+  fi
+
+  local resp code
+  resp="$(curl -sS -w "\n%{http_code}" \
+    -X PUT "$API/repos/$GITHUB_OWNER/$repo_name/contents/$rel_path" \
+    -H "Authorization: Bearer $GITHUB_TOKEN" \
+    -H "Accept: application/vnd.github+json" \
+    -H "X-GitHub-Api-Version: 2022-11-28" \
+    -d "$payload")"
+  code="$(echo "$resp" | tail -n1)"
+
+  if [[ "$code" == "200" || "$code" == "201" ]]; then
+    echo "  OK  $rel_path"
+  else
+    echo "  FAIL $rel_path (HTTP $code)" >&2
+    echo "$resp" | head -n -1 | jq -r '.message // .' >&2
+    return 1
+  fi
+}
+
+# ---- Push all files from staging dir ----
 
 push_staging() {
   local repo_name="$1"
@@ -107,47 +139,19 @@ push_staging() {
     return 1
   fi
 
-  echo "Pushing $staging_dir → $GITHUB_OWNER/$repo_name..."
+  echo "Uploading $staging_dir → github.com/$GITHUB_OWNER/$repo_name"
 
-  # Determine remote URL
-  local remote_url
-  if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-    remote_url="https://${GITHUB_TOKEN}@github.com/${GITHUB_OWNER}/${repo_name}.git"
-  else
-    remote_url="https://github.com/${GITHUB_OWNER}/${repo_name}.git"
-  fi
+  local files=()
+  while IFS= read -r -d '' f; do
+    files+=("$f")
+  done < <(find "$staging_dir" -type f -print0 | sort -z)
 
-  local tmp_dir
-  tmp_dir="$(mktemp -d)"
-  trap 'rm -rf "$tmp_dir"' RETURN
-
-  # Init a fresh git repo from staging content
-  cp -r "$staging_dir/." "$tmp_dir/"
-  cd "$tmp_dir"
-
-  git init -b main
-  git config user.name "github-actions[bot]"
-  git config user.email "github-actions[bot]@users.noreply.github.com"
-  git add -A
-  git commit -m "Initial commit from didactic-winner staging"
-
-  # Push — retry up to 4 times with exponential backoff on network errors
-  local attempt=1 delay=2
-  while [[ $attempt -le 4 ]]; do
-    if git push -u "$remote_url" main --force 2>&1; then
-      echo "  Pushed successfully."
-      cd "$PROJECT_ROOT"
-      return 0
-    fi
-    echo "  Push attempt $attempt failed — retrying in ${delay}s..." >&2
-    sleep $delay
-    delay=$((delay * 2))
-    attempt=$((attempt + 1))
+  for abs_path in "${files[@]}"; do
+    local rel_path="${abs_path#$staging_dir/}"
+    upload_file "$repo_name" "$abs_path" "$rel_path"
   done
 
-  echo "  ERROR: All push attempts failed for $repo_name" >&2
-  cd "$PROJECT_ROOT"
-  return 1
+  echo "  Done: https://github.com/$GITHUB_OWNER/$repo_name"
 }
 
 # ---- Main ----
@@ -158,22 +162,21 @@ echo ""
 for entry in "${REPOS[@]}"; do
   repo_name="${entry%%:*}"
   description="${entry#*:}"
-  create_repo "$repo_name" "$description"
+  ensure_repo "$repo_name" "$description"
 done
 
 echo ""
-echo "=== Pushing staging content ==="
+echo "=== Uploading content ==="
 echo ""
 
 for entry in "${REPOS[@]}"; do
   repo_name="${entry%%:*}"
   push_staging "$repo_name"
+  echo ""
 done
 
-echo ""
 echo "=== Done ==="
 echo ""
-echo "Repos created:"
 for entry in "${REPOS[@]}"; do
   repo_name="${entry%%:*}"
   echo "  https://github.com/$GITHUB_OWNER/$repo_name"
