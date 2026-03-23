@@ -19,7 +19,7 @@ var _is_paused: bool = false
 
 
 func _ready() -> void:
-	EventBus.hour_passed.connect(_on_hour_passed)
+	pass
 
 
 func _process(delta: float) -> void:
@@ -88,5 +88,3 @@ func _advance_season() -> void:
 	EventBus.season_changed.emit(current_season)
 
 
-func _on_hour_passed(_hour: int) -> void:
-	pass

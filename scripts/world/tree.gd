@@ -25,7 +25,7 @@ func _ready() -> void:
 func interact(player: PlayerController) -> void:
 	if is_chopped:
 		return
-	if not player.inventory.has_item("hand_axe"):
+	if player.inventory == null or not player.inventory.has_item("hand_axe"):
 		EventBus.journal_entry_added.emit("Need a hand axe to chop trees. Craft one: 2 logs + 3 stones [I].")
 		return
 	_apply_chop(player)
@@ -40,8 +40,10 @@ func get_interact_prompt(player: PlayerController) -> String:
 
 
 func _apply_chop(player: PlayerController) -> void:
-	var skill_level: int = player.skills.get_level(SkillComponent.Skill.LUMBERJACKING)
-	player.skills.add_xp(SkillComponent.Skill.LUMBERJACKING, XP_PER_CHOP)
+	var skill_level: int = 0
+	if player.skills != null:
+		skill_level = player.skills.get_level(SkillComponent.Skill.LUMBERJACKING)
+		player.skills.add_xp(SkillComponent.Skill.LUMBERJACKING, XP_PER_CHOP)
 	chops_remaining -= 1
 	if chops_remaining <= 0:
 		_fell(player, skill_level)
@@ -52,7 +54,8 @@ func _apply_chop(player: PlayerController) -> void:
 func _fell(player: PlayerController, skill_level: int) -> void:
 	is_chopped = true
 	var log_yield: int = BASE_LOG_YIELD + (skill_level / 3)
-	player.inventory.add_item(LOG_ITEM_ID, log_yield, LOG_WEIGHT)
+	if player.inventory != null:
+		player.inventory.add_item(LOG_ITEM_ID, log_yield, LOG_WEIGHT)
 	EventBus.tree_chopped.emit(global_position, log_yield)
 	EventBus.journal_entry_added.emit("Chopped down a tree. Got %d logs." % log_yield)
 	_update_visuals()

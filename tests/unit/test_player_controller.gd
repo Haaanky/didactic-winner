@@ -26,6 +26,10 @@ func before_each() -> void:
 	cam.name = "Camera2D"
 	_player.add_child(cam)
 
+	var needs := NeedsComponent.new()
+	_player.needs = needs
+	_player.add_child(needs)
+
 	add_child(_player)
 
 
@@ -121,6 +125,18 @@ func test_dead_player_ignores_heal() -> void:
 func test_player_is_not_alive_after_lethal_damage() -> void:
 	_player.take_damage(PlayerController.MAX_HEALTH)
 	assert_false(_player._is_alive)
+
+
+func test_needs_health_depleted_kills_player() -> void:
+	assert_true(_player._is_alive)
+	_player.needs.health_depleted.emit()
+	assert_false(_player._is_alive)
+
+
+func test_needs_health_depleted_emits_player_died_on_eventbus() -> void:
+	watch_signals(EventBus)
+	_player.needs.health_depleted.emit()
+	assert_signal_emitted(EventBus, "player_died")
 
 
 # ── constants ─────────────────────────────────────────────────────────────────

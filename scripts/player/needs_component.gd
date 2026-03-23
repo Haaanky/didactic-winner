@@ -3,6 +3,9 @@ extends Node
 
 ## Tracks the four survival needs: hunger, warmth, rest, morale.
 ## Health only drains when a need is fully depleted.
+## Emits health_depleted when health reaches zero — PlayerController should connect to this.
+
+signal health_depleted()
 
 const BASE_DRAIN_PER_HOUR: Dictionary = {
 	"hunger": 4.0,
@@ -14,6 +17,15 @@ const BASE_DRAIN_PER_HOUR: Dictionary = {
 const NEED_MAX: float = 100.0
 const CRITICAL_THRESHOLD: float = 20.0
 const HEALTH_DRAIN_PER_HOUR: float = 10.0
+
+const TEMP_THRESHOLD_EXTREME: float = -15.0
+const TEMP_THRESHOLD_COLD: float = -5.0
+const TEMP_THRESHOLD_FREEZING: float = 0.0
+const TEMP_THRESHOLD_WARM: float = 15.0
+const WARMTH_MULTIPLIER_EXTREME: float = 4.0
+const WARMTH_MULTIPLIER_COLD: float = 2.0
+const WARMTH_MULTIPLIER_FREEZING: float = 1.5
+const WARMTH_MULTIPLIER_WARM: float = 0.3
 
 var needs: Dictionary = {
 	"hunger": NEED_MAX,
@@ -100,17 +112,17 @@ func _on_hour_passed(_hour: int) -> void:
 		health = maxf(health - HEALTH_DRAIN_PER_HOUR * _depleted_needs.size(), 0.0)
 		EventBus.health_changed.emit(health)
 		if health <= 0.0:
-			EventBus.player_died.emit()
+			health_depleted.emit()
 
 
 func _on_temperature_changed(temperature: float) -> void:
-	if temperature <= -15.0:
-		_warmth_multiplier = 4.0
-	elif temperature <= -5.0:
-		_warmth_multiplier = 2.0
-	elif temperature <= 0.0:
-		_warmth_multiplier = 1.5
-	elif temperature >= 15.0:
-		_warmth_multiplier = 0.3
+	if temperature <= TEMP_THRESHOLD_EXTREME:
+		_warmth_multiplier = WARMTH_MULTIPLIER_EXTREME
+	elif temperature <= TEMP_THRESHOLD_COLD:
+		_warmth_multiplier = WARMTH_MULTIPLIER_COLD
+	elif temperature <= TEMP_THRESHOLD_FREEZING:
+		_warmth_multiplier = WARMTH_MULTIPLIER_FREEZING
+	elif temperature >= TEMP_THRESHOLD_WARM:
+		_warmth_multiplier = WARMTH_MULTIPLIER_WARM
 	else:
 		_warmth_multiplier = 1.0

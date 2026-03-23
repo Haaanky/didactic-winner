@@ -21,6 +21,8 @@ const ENCUMBRANCE_SPEED_PENALTY: float = 0.4
 const HURT_FLASH_DURATION: float = 0.15
 const DEATH_ANIM_DURATION: float = 0.8
 const PROMPT_CHECK_INTERVAL: float = 0.1
+const FOOTSTEP_INTERVAL_WALK: float = 0.45
+const FOOTSTEP_INTERVAL_RUN: float = 0.3
 
 @export var sprint_multiplier: float = 1.6
 @export var needs: NeedsComponent
@@ -52,6 +54,8 @@ func _ready() -> void:
 	GameManager.set_state(GameManager.GameState.PLAYING)
 	if footstep_player != null:
 		footstep_player.stream = _FOOTSTEP_SNOW
+	if needs != null:
+		needs.health_depleted.connect(_die)
 	_give_starting_items()
 
 
@@ -173,7 +177,7 @@ func _handle_footsteps(delta: float) -> void:
 	if velocity == Vector2.ZERO:
 		_footstep_timer = 0.0
 		return
-	var interval: float = 0.45 if not _is_running else 0.3
+	var interval: float = FOOTSTEP_INTERVAL_WALK if not _is_running else FOOTSTEP_INTERVAL_RUN
 	_footstep_timer += delta
 	if _footstep_timer >= interval:
 		_footstep_timer = 0.0

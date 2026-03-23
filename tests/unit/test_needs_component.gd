@@ -162,13 +162,13 @@ func test_health_drains_faster_with_two_depleted_needs() -> void:
 	assert_eq(_needs.health, NeedsComponent.NEED_MAX - NeedsComponent.HEALTH_DRAIN_PER_HOUR * 2.0)
 
 
-func test_player_dies_when_health_reaches_zero() -> void:
+func test_health_depleted_signal_emitted_when_health_reaches_zero() -> void:
 	_needs.health = NeedsComponent.HEALTH_DRAIN_PER_HOUR
 	_needs.needs["hunger"] = 0.0
 	_needs._depleted_needs.append("hunger")
-	watch_signals(EventBus)
+	watch_signals(_needs)
 	EventBus.hour_passed.emit(9)
-	assert_signal_emitted(EventBus, "player_died")
+	assert_signal_emitted(_needs, "health_depleted")
 
 
 func test_health_does_not_drain_without_depleted_needs() -> void:
