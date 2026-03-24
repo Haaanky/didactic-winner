@@ -67,8 +67,8 @@ func _open() -> void:
 
 func _close() -> void:
 	_is_open = false
-	get_tree().paused = false
 	hide()
+	get_tree().paused = false
 	EventBus.ui_screen_closed.emit("journal")
 
 
