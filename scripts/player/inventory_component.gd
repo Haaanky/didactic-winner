@@ -8,6 +8,7 @@ signal inventory_changed()
 signal weight_limit_reached()
 
 const MAX_WEIGHT: float = 30.0
+const _PICKUP_SFX: AudioStream = preload("res://assets/audio/item_pickup.wav")
 
 var items: Dictionary = {}
 var total_weight: float = 0.0
@@ -26,6 +27,7 @@ func add_item(item_id: String, quantity: int, weight_per_unit: float) -> bool:
 			"weight_per_unit": weight_per_unit,
 		}
 	total_weight += added_weight
+	AudioManager.play_sfx_global(_PICKUP_SFX)
 	EventBus.item_picked_up.emit(item_id, quantity)
 	inventory_changed.emit()
 	return true

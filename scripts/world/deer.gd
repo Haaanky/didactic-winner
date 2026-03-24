@@ -18,6 +18,7 @@ const STOP_FLEE_RADIUS: float = 300.0
 const XP_PER_HUNT: float = 20.0
 const DEAD_MODULATE: Color = Color(0.5, 0.35, 0.25, 0.85)
 const DEAD_ROTATION: float = 1.5
+const _STARTLE_SFX: AudioStream = preload("res://assets/audio/deer_startle.wav")
 
 enum DeerState { IDLE, WANDERING, FLEEING, DEAD }
 
@@ -48,6 +49,7 @@ func _physics_process(_delta: float) -> void:
 		var dist: float = global_position.distance_to(player.global_position)
 		if dist < FLEE_RADIUS:
 			deer_state = DeerState.FLEEING
+			AudioManager.play_sfx(_STARTLE_SFX, global_position)
 	match deer_state:
 		DeerState.IDLE, DeerState.WANDERING:
 			_do_wander(_delta)

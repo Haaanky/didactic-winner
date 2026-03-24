@@ -15,6 +15,7 @@ const BASE_YIELD_MAX: int = 5
 const REGROW_HOURS: int = 48
 const XP_PER_HARVEST: float = 8.0
 const DEPLETED_MODULATE: Color = Color(0.5, 0.4, 0.3, 1.0)
+const _PICK_SFX: AudioStream = preload("res://assets/audio/berry_pick.wav")
 
 @export var bush_sprite: Sprite2D
 @export var interact_area: StaticBody2D
@@ -54,6 +55,7 @@ func _harvest(player: PlayerController) -> void:
 		player.skills.add_xp(SkillComponent.Skill.FARMING, XP_PER_HARVEST)
 	var yield_count: int = BASE_YIELD_MIN + _rng.randi_range(0, BASE_YIELD_MAX - BASE_YIELD_MIN)
 	yield_count += skill_level / 4
+	AudioManager.play_sfx(_PICK_SFX, global_position)
 	has_berries = false
 	_hours_until_regrow = REGROW_HOURS
 	if player.inventory != null:

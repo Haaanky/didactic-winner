@@ -9,6 +9,7 @@ const LOG_WEIGHT: float = 2.0
 const BASE_CHOPS_REQUIRED: int = 5
 const BASE_LOG_YIELD: int = 3
 const XP_PER_CHOP: float = 10.0
+const _CHOP_SFX: AudioStream = preload("res://assets/audio/tree_chop.wav")
 
 @export var trunk_sprite: Sprite2D
 @export var stump_sprite: Sprite2D
@@ -44,6 +45,7 @@ func _apply_chop(player: PlayerController) -> void:
 	if player.skills != null:
 		skill_level = player.skills.get_level(SkillComponent.Skill.LUMBERJACKING)
 		player.skills.add_xp(SkillComponent.Skill.LUMBERJACKING, XP_PER_CHOP)
+	AudioManager.play_sfx(_CHOP_SFX, global_position)
 	chops_remaining -= 1
 	if chops_remaining <= 0:
 		_fell(player, skill_level)

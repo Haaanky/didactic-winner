@@ -12,6 +12,7 @@ const WARMTH_RADIUS: float = 96.0
 const FUEL_BURN_PER_HOUR: float = 1.0
 const WARMTH_MULTIPLIER_NEAR_FIRE: float = 0.05
 const LOG_ITEM_ID: StringName = &"log"
+const _IGNITE_SFX: AudioStream = preload("res://assets/audio/campfire_ignite.wav")
 
 @export var flame_sprite: AnimatedSprite2D
 @export var warmth_area: Area2D
@@ -57,6 +58,7 @@ func _try_light(player: PlayerController) -> void:
 	player.inventory.remove_item(LOG_ITEM_ID, 2)
 	fuel_logs += 2
 	is_lit = true
+	AudioManager.play_sfx(_IGNITE_SFX, global_position)
 	_update_visuals()
 	lit.emit()
 	EventBus.campfire_lit.emit(self)

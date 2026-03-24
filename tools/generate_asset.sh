@@ -143,6 +143,15 @@ ensure_local_server() {
 
 mkdir -p "$OUTPUT_DIR"
 
+# Strips the white/near-white background from a generated sprite, converting
+# it to a transparent PNG. Called after every sprite save.
+_strip_sprite_bg() {
+  local file="$1"
+  if ! python3 "$SCRIPT_DIR/remove_bg.py" "$file" 2>/dev/null; then
+    echo "WARNING: background removal failed for $file — leaving as-is" >&2
+  fi
+}
+
 # ---- Sprite ----
 
 generate_sprite() {
@@ -202,6 +211,7 @@ _try_generate_sprite_cloud() {
   fi
 
   mv "$tmp_file" "$OUTPUT_DIR/$filename"
+  _strip_sprite_bg "$OUTPUT_DIR/$filename"
   echo "Saved: $OUTPUT_DIR/$filename"
   return 0
 }
@@ -227,8 +237,9 @@ _try_generate_sprite_hf() {
   fi
 
   local filename
-  filename="$(build_filename sprite "$prompt" jpg)"
+  filename="$(build_filename sprite "$prompt" png)"
   mv "$tmp_file" "$OUTPUT_DIR/$filename"
+  _strip_sprite_bg "$OUTPUT_DIR/$filename"
   echo "Saved: $OUTPUT_DIR/$filename"
   return 0
 }
@@ -255,6 +266,7 @@ _generate_sprite_local() {
   local filename
   filename="$(build_filename sprite "$prompt" png)"
   echo "$b64" | base64 -d > "$OUTPUT_DIR/$filename"
+  _strip_sprite_bg "$OUTPUT_DIR/$filename"
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 

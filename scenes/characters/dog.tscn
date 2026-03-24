@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://dog001"]
+[gd_scene load_steps=4 format=3 uid="uid://dog001"]
 
 [ext_resource type="Script" uid="uid://scrdog1" path="res://scripts/characters/dog.gd" id="1_dog"]
+[ext_resource type="Texture2D" path="res://assets/sprites/dog.png" id="2_dogtex"]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_1"]
 radius = 8.0
@@ -15,4 +16,5 @@ script = ExtResource("1_dog")
 shape = SubResource("CapsuleShape2D_1")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-modulate = Color(0.75, 0.55, 0.3, 1)
+texture = ExtResource("2_dogtex")
+scale = Vector2(0.04, 0.04)
