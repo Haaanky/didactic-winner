@@ -247,16 +247,18 @@ test.describe('Journal, map and sprint', () => {
     await page.waitForTimeout(1_000);
     await page.mouse.click(640, 360);
     await page.waitForTimeout(2_000);
+    await page.locator('#canvas, canvas').first().click();
+    await page.waitForTimeout(300);
   });
 
   test('journal key [J] opens and closes journal without crash', async ({ page }) => {
     const { getFatal } = collectFatalErrors(page);
     const before = await page.screenshot();
     await page.keyboard.press('j');
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(1_200);
     const afterOpen = await page.screenshot();
     await page.keyboard.press('j');
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(1_200);
     const afterClose = await page.screenshot();
     expect(getFatal()).toHaveLength(0);
     const diffOpen = screenshotDiffFraction(before, afterOpen);
@@ -360,11 +362,11 @@ test.describe('Crafting system', () => {
     const { getFatal } = collectFatalErrors(page);
     // Open inventory
     await page.keyboard.press('i');
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(1_200);
     const withInventory = await page.screenshot();
     // Click Craft button (bottom-right of inventory panel)
     await page.mouse.click(871, 557);
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(1_500);
     const withCrafting = await page.screenshot();
     expect(getFatal()).toHaveLength(0);
     // Crafting screen must visually differ from inventory-only state
@@ -375,13 +377,13 @@ test.describe('Crafting system', () => {
   test('crafting screen closes without crash', async ({ page }) => {
     const { getFatal } = collectFatalErrors(page);
     await page.keyboard.press('i');
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(1_200);
     await page.mouse.click(871, 557);
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(1_500);
     const withCrafting = await page.screenshot();
     // Close via X button (top-right of crafting panel)
     await page.mouse.click(877, 173);
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(1_200);
     const afterClose = await page.screenshot();
     expect(getFatal()).toHaveLength(0);
     const diff = screenshotDiffFraction(withCrafting, afterClose);
@@ -406,11 +408,11 @@ test.describe('Save / Load system', () => {
   test('Save/Load screen opens from pause menu', async ({ page }) => {
     const { getFatal } = collectFatalErrors(page);
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(1_200);
     const withPause = await page.screenshot();
     // Click "Save / Load" button (second button, y≈387)
     await page.mouse.click(640, 387);
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(1_500);
     const withSaveLoad = await page.screenshot();
     expect(getFatal()).toHaveLength(0);
     const diff = screenshotDiffFraction(withPause, withSaveLoad);
@@ -502,14 +504,14 @@ test.describe('Fishing system', () => {
 
   test('walking to fishing spot and interacting does not crash', async ({ page }) => {
     const { getFatal } = collectFatalErrors(page);
-    // FishingSpot1 is ~220px south of player start — walk south for 1.3s at speed 200px/s
+    // FishingSpot1 is ~205px south of player start — walk south for 2.5s at speed 120px/s
     await page.keyboard.down('s');
-    await page.waitForTimeout(1_400);
+    await page.waitForTimeout(2_500);
     await page.keyboard.up('s');
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(600);
     const before = await page.screenshot();
     await page.keyboard.press('e');
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(1_500);
     const after = await page.screenshot();
     expect(getFatal()).toHaveLength(0);
     const diff = screenshotDiffFraction(before, after);
@@ -519,9 +521,9 @@ test.describe('Fishing system', () => {
   test('fishing key sequence does not crash game', async ({ page }) => {
     const { getFatal } = collectFatalErrors(page);
     await page.keyboard.down('s');
-    await page.waitForTimeout(1_400);
+    await page.waitForTimeout(2_500);
     await page.keyboard.up('s');
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(600);
     // Cast, wait, pull sequence
     await page.keyboard.press('e');
     await page.waitForTimeout(600);
@@ -630,7 +632,7 @@ test.describe('Building system', () => {
     const { getFatal } = collectFatalErrors(page);
     const before = await page.screenshot();
     await page.keyboard.press('b');
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(1_500);
     const after = await page.screenshot();
     expect(getFatal()).toHaveLength(0);
     const diff = screenshotDiffFraction(before, after);
@@ -640,10 +642,10 @@ test.describe('Building system', () => {
   test('build menu closes without crash', async ({ page }) => {
     const { getFatal } = collectFatalErrors(page);
     await page.keyboard.press('b');
-    await page.waitForTimeout(800);
+    await page.waitForTimeout(1_500);
     const withMenu = await page.screenshot();
     await page.keyboard.press('b');
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(1_200);
     const closed = await page.screenshot();
     expect(getFatal()).toHaveLength(0);
     const diff = screenshotDiffFraction(withMenu, closed);

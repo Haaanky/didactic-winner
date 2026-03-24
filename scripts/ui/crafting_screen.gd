@@ -66,8 +66,8 @@ func _close() -> void:
 		return
 	AudioManager.play_sfx_global(_CLICK_SFX)
 	_is_open = false
-	get_tree().paused = false
 	hide()
+	get_tree().paused = false
 	EventBus.crafting_closed.emit()
 
 
