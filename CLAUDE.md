@@ -5,6 +5,9 @@ This file provides guidance for AI assistants (Claude and others) working in thi
 > **Also read [`AI_BACKENDS.md`](./AI_BACKENDS.md) at the start of every session.**
 > It is a mandatory extension of this file covering all AI/LLM backend rules.
 
+> **Also read [`ASSET_POLICY.md`](./ASSET_POLICY.md) at the start of every session.**
+> It is a mandatory extension of this file covering asset generation rules and the asset registry.
+
 ---
 
 ## MANDATORY RULES — Read First, Always
