@@ -625,10 +625,23 @@ The project includes an **AI Asset Generator** editor plugin (`addons/ai_assets/
 The tool handles everything automatically:
 - Tries the cloud API first (if a key is available in the environment)
 - If cloud fails or no key is set, automatically starts and uses the local server
+- **Strips white/near-white backgrounds** via `tools/remove_bg.py` — output is always a transparent PNG
 - Saves the result to `assets/generated/` with a timestamped filename
 - Returns the saved path on stdout
 
 After running, reference the saved path in your GDScript with `preload("res://assets/generated/<filename>")`.
+
+### Sprite Transparency — Mandatory Rules
+
+**Every sprite used in-game must have a transparent background. White background boxes are never acceptable.**
+
+- `generate_asset.sh` runs `tools/remove_bg.py` automatically on every generated sprite — do not bypass this step
+- If a sprite is added manually (not via the CLI tool), run `python3 tools/remove_bg.py <file.png>` before committing it
+- After background removal, **open the sprite in a PNG viewer or the Godot editor and confirm the background is transparent**, not white — do not assume the removal succeeded without checking
+- Sprites placed on `Sprite2D` or `AnimatedSprite2D` nodes must look correct in-game: no white box surrounding the art, correct alpha along all edges
+- If a sprite has anti-aliased edges or soft gradients, verify the edge alpha is smooth (no hard cut-off fringe)
+- `tileset_terrain.png` and other tilesets: individual tiles must be transparent outside their drawn area; the tileset atlas itself may have a transparent or dark background
+- If background removal leaves a visible fringe (e.g. on a sprite with a very light-coloured subject), re-generate the sprite with a higher-contrast background prompt (e.g. add `"dark background"` or `"black background"` to the prompt) and re-run the removal tool
 
 **Example workflow** — adding a campfire to a scene:
 ```bash
