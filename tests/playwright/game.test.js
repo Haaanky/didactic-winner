@@ -247,8 +247,8 @@ test.describe('Journal, map and sprint', () => {
     await page.waitForTimeout(1_000);
     await page.mouse.click(640, 360);
     await page.waitForTimeout(2_000);
-    await page.locator('#canvas, canvas').first().click();
-    await page.waitForTimeout(300);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(500);
   });
 
   test('journal key [J] opens and closes journal without crash', async ({ page }) => {
@@ -354,8 +354,8 @@ test.describe('Crafting system', () => {
     await page.waitForTimeout(1_000);
     await page.mouse.click(640, 360);
     await page.waitForTimeout(2_000);
-    await page.locator('#canvas, canvas').first().click();
-    await page.waitForTimeout(300);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(500);
   });
 
   test('crafting screen opens from inventory Craft button', async ({ page }) => {
@@ -401,8 +401,8 @@ test.describe('Save / Load system', () => {
     await page.waitForTimeout(1_000);
     await page.mouse.click(640, 360);
     await page.waitForTimeout(2_000);
-    await page.locator('#canvas, canvas').first().click();
-    await page.waitForTimeout(300);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(500);
   });
 
   test('Save/Load screen opens from pause menu', async ({ page }) => {
@@ -498,8 +498,8 @@ test.describe('Fishing system', () => {
     await page.waitForTimeout(1_000);
     await page.mouse.click(640, 360);
     await page.waitForTimeout(2_000);
-    await page.locator('#canvas, canvas').first().click();
-    await page.waitForTimeout(300);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(500);
   });
 
   test('walking to fishing spot and interacting does not crash', async ({ page }) => {
@@ -543,8 +543,8 @@ test.describe('Hunting system', () => {
     await page.waitForTimeout(1_000);
     await page.mouse.click(640, 360);
     await page.waitForTimeout(2_000);
-    await page.locator('#canvas, canvas').first().click();
-    await page.waitForTimeout(300);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(500);
   });
 
   test('walking toward deer does not crash game', async ({ page }) => {
@@ -624,8 +624,8 @@ test.describe('Building system', () => {
     await page.waitForTimeout(1_000);
     await page.mouse.click(640, 360);
     await page.waitForTimeout(2_000);
-    await page.locator('#canvas, canvas').first().click();
-    await page.waitForTimeout(300);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(500);
   });
 
   test('pressing B opens build menu without crash', async ({ page }) => {
@@ -663,8 +663,8 @@ test.describe('NPC town interaction', () => {
     await page.waitForTimeout(1_000);
     await page.mouse.click(640, 360);
     await page.waitForTimeout(2_000);
-    await page.locator('#canvas, canvas').first().click();
-    await page.waitForTimeout(300);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(500);
   });
 
   test('walking to NPC and pressing E does not crash', async ({ page }) => {
@@ -705,8 +705,8 @@ test.describe('Pets system', () => {
     await page.waitForTimeout(1_000);
     await page.mouse.click(640, 360);
     await page.waitForTimeout(2_000);
-    await page.locator('#canvas, canvas').first().click();
-    await page.waitForTimeout(300);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(500);
   });
 
   test('walking to dog and pressing E does not crash', async ({ page }) => {
@@ -743,8 +743,8 @@ test.describe('Vehicles', () => {
     await page.waitForTimeout(1_000);
     await page.mouse.click(640, 360);
     await page.waitForTimeout(2_000);
-    await page.locator('#canvas, canvas').first().click();
-    await page.waitForTimeout(300);
+    await page.mouse.click(640, 360);
+    await page.waitForTimeout(500);
   });
 
   test('walking to bicycle and pressing E does not crash', async ({ page }) => {
