@@ -46,7 +46,7 @@ func take_damage(amount: int) -> void:
 - **Error handling at boundaries** — validate external data (save files, user input) but do not add defensive guards inside well-understood internal logic
 - **Avoid deep nesting** — maximum 3 levels of indentation per function; extract helpers if needed
 - **Functions do one thing** — each function has a single, clearly named responsibility; aim for under 30 lines
-- **TDD is mandatory for all new features and non-trivial bug fixes** — Follow Red → Green → Refactor. Each phase must produce a working (compilable, runnable) project state. Committing a Green or Refactor phase without a preceding Red commit is a violation.
+- **TDD is mandatory for all new features and non-trivial bug fixes** — Follow Red → Green → Refactor (see [Testing](#testing)). Each phase must produce a working (compilable, runnable) project state. Committing a Green or Refactor phase without a preceding Red commit is a violation.
 
 ---
 
@@ -479,13 +479,13 @@ rm -rf /tmp/godot /tmp/godot.zip
 
   Update `GODOT_VERSION` to the current latest stable before running.
 
-**TDD compliance check:** before pushing, confirm that for each new feature, at least one commit on the branch has a failing test preceding the implementation commit. This is enforced by code review, not tooling.
+**TDD compliance check:** before pushing, confirm that for each new feature, at least one commit on the branch has a failing test preceding the implementation commit. This is enforced by code review, not tooling. When opening a PR, include a link to the Red-phase commit in the PR description so reviewers can verify it without digging through the log.
 
 ---
 
 ## Development Workflow for AI Assistants
 
-0. **Write a failing GUT test first** — Before writing any implementation code, write a GUT test that defines the expected behavior and confirm it fails. Do not proceed to implementation until the Red phase is verified.
+0. **Write a failing GUT test first** — Before writing any implementation code, write a GUT test that defines the expected behavior and confirm it fails. Do not proceed to implementation until the Red phase is verified. (Rule source: sektion 2 → Code Quality → TDD; full workflow: [Testing](#testing).)
 1. **Read before editing** — always read existing scripts/scenes before modifying
 2. **Use GDScript** — do not introduce C# unless explicitly requested
 3. **Use Godot 4 latest stable APIs only** — never generate Godot 3 syntax; see the Version Policy table above
@@ -534,6 +534,7 @@ The three phases below show the mandatory TDD workflow. Each phase must leave th
 
 ```gdscript
 # tests/unit/test_stamina_component.gd
+# ILLUSTRATION ONLY — do not create StaminaComponent in this project.
 # Run this BEFORE creating StaminaComponent. The test must fail (red) to prove
 # it actually exercises missing behaviour, not a pre-existing accident.
 extends GutTest
