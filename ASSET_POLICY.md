@@ -4,6 +4,11 @@
 
 This document instructs Claude Code on how to handle asset requirements when working in this repository. Any prompt that introduces, modifies, or replaces content that has a visual, audio, or interactive representation must trigger automatic asset generation using the project's configured tools (`tools/generate_asset.sh` for CLI, or the **AI Asset Generator** editor plugin).
 
+> **Also read [`docs/asset_generation_architecture.md`](./docs/asset_generation_architecture.md)**
+> before generating any asset. It documents the four-tier fallback chain
+> (submodule → internal copy → local servers → agent built-in skills) and
+> the procedure for each tier.
+
 ---
 
 ## Asset Registry
@@ -140,6 +145,22 @@ Suggested naming patterns per category:
 | Music | `<mood_or_season>.ogg` | `winter_outdoor.ogg`, `autumn_day.ogg` |
 
 ---
+
+## Fallback Chain
+
+When `./tools/generate_asset.sh` is invoked, it automatically tries the following tiers in order:
+
+| Tier | Tool | Activated when |
+|---|---|---|
+| 1 | `vendor/game-dev-tools/src/generate_asset.sh` (submodule) | Submodule is initialised |
+| 2 | `tools/_generate_asset_internal.sh` (project copy) | Submodule absent or fails |
+| 3 | Local AI servers (AUTOMATIC1111, AudioCraft) | Cloud API keys unavailable; embedded in tiers 1–2 |
+| 4 | Agent built-in skills (placeholder generation) | All automated paths fail; AI agent only |
+
+For tier-4 instructions, see `docs/asset_generation_architecture.md §4`.
+
+**Never bypass the wrapper** by calling the submodule script directly — the wrapper
+sets `ASSET_OUTPUT_DIR` and runs `tools/remove_bg.py` for sprite transparency.
 
 ## Ambiguity Handling
 

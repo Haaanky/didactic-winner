@@ -1,0 +1,3 @@
+[submodule "vendor/game-dev-tools"]
+	path = vendor/game-dev-tools
+	url = https://github.com/Haaanky/game-dev-tools

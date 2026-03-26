@@ -665,7 +665,7 @@ func test_touch_on_play_button_queues_level_01() -> void:
 
 ## Asset Generation
 
-The project includes an **AI Asset Generator** editor plugin (`addons/ai_assets/`) and a CLI batch script (`tools/generate_asset.sh`) for generating sprites, SFX, and music from text prompts.
+The project includes an **AI Asset Generator** editor plugin (`addons/ai_assets/`) and a CLI wrapper script (`tools/generate_asset.sh`) for generating sprites, SFX, and music from text prompts.
 
 ### For AI Assistants — How to Generate Assets
 
@@ -677,14 +677,30 @@ The project includes an **AI Asset Generator** editor plugin (`addons/ai_assets/
 ./tools/generate_asset.sh music  "description of the music style and mood"
 ```
 
-The tool handles everything automatically:
-- Tries the cloud API first (if a key is available in the environment)
-- If cloud fails or no key is set, automatically starts and uses the local server
+The wrapper uses a **four-tier fallback chain** — it always tries the best available path automatically:
+
+1. **Submodule** (`vendor/game-dev-tools/src/generate_asset.sh`) — primary
+2. **Internal copy** (`tools/_generate_asset_internal.sh`) — backup if submodule absent/fails
+3. **Local AI servers** — embedded in tiers 1 and 2 (auto-started via `LOCAL_*_START_CMD`)
+4. **Agent built-in skills** — placeholder generation; see `docs/asset_generation_architecture.md §4`
+
+The wrapper always:
+- Sets `ASSET_OUTPUT_DIR` to `assets/generated/`
 - **Strips white/near-white backgrounds** via `tools/remove_bg.py` — output is always a transparent PNG
 - Saves the result to `assets/generated/` with a timestamped filename
 - Returns the saved path on stdout
 
+Full documentation: **`docs/asset_generation_architecture.md`**
+
 After running, reference the saved path in your GDScript with `preload("res://assets/generated/<filename>")`.
+
+### Submodule initialisation (first time only)
+
+```bash
+git submodule update --init vendor/game-dev-tools
+```
+
+The internal fallback works without this, so generation is never blocked — but initialise the submodule for best results.
 
 ### Sprite Transparency — Mandatory Rules
 
