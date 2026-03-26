@@ -17,9 +17,8 @@ embeddings, or any other AI API. The backend selection must be invisible to the 
 
 ## CRITICAL: Never start local model servers from inside Claude's cloud environment
 
-The local servers (primary: `vendor/game-dev-tools/src/servers/local_sprite_server.py`,
-`vendor/game-dev-tools/src/servers/local_audio_server.py`; fallback copies:
-`tools/local_sprite_server.py`, `tools/local_audio_server.py`) may be started
+The local servers (`vendor/game-dev-tools/src/servers/local_sprite_server.py`,
+`vendor/game-dev-tools/src/servers/local_audio_server.py`) may be started
 freely on the developer's own machine or any controlled/self-hosted environment.
 They must **not** be started from a Claude Code session running in
 Anthropic's cloud infrastructure.
@@ -33,8 +32,7 @@ the hostname is an ephemeral container, or the session was opened via claude.ai 
 the Claude Code web interface without a self-hosted runner.
 
 **Rule for AI assistants when running in Claude's cloud:**
-- Do **not** execute any local server script (`vendor/game-dev-tools/src/servers/*.py`
-  or the `tools/local_*.py` fallback copies)
+- Do **not** execute any local server script (`vendor/game-dev-tools/src/servers/*.py`)
 - Do **not** run `pip install torch`, `pip install diffusers`, or `pip install audiocraft`
 - Do **not** call `./tools/generate_asset.sh` with `FORCE_LOCAL_AI=1`
 - If cloud generation fails and no API key is available, use the tier-4 agent
