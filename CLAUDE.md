@@ -46,6 +46,7 @@ func take_damage(amount: int) -> void:
 - **Error handling at boundaries** — validate external data (save files, user input) but do not add defensive guards inside well-understood internal logic
 - **Avoid deep nesting** — maximum 3 levels of indentation per function; extract helpers if needed
 - **Functions do one thing** — each function has a single, clearly named responsibility; aim for under 30 lines
+- **TDD is mandatory for all new features and non-trivial bug fixes** — Follow Red → Green → Refactor (see [Testing](#testing)). Each phase must produce a working (compilable, runnable) project state. Committing a Green or Refactor phase without a preceding Red commit is a violation.
 
 ---
 
@@ -478,10 +479,13 @@ rm -rf /tmp/godot /tmp/godot.zip
 
   Update `GODOT_VERSION` to the current latest stable before running.
 
+**TDD compliance check:** before pushing, confirm that for each new feature, at least one commit on the branch has a failing test preceding the implementation commit. This is enforced by code review, not tooling. When opening a PR, include a link to the Red-phase commit in the PR description so reviewers can verify it without digging through the log.
+
 ---
 
 ## Development Workflow for AI Assistants
 
+0. **Write a failing GUT test first** — Before writing any implementation code, write a GUT test that defines the expected behavior and confirm it fails. Do not proceed to implementation until the Red phase is verified. (Rule source: sektion 2 → Code Quality → TDD; full workflow: [Testing](#testing).)
 1. **Read before editing** — always read existing scripts/scenes before modifying
 2. **Use GDScript** — do not introduce C# unless explicitly requested
 3. **Use Godot 4 latest stable APIs only** — never generate Godot 3 syntax; see the Version Policy table above
@@ -522,23 +526,71 @@ Download or clone the GUT repo and place the `addons/gut/` directory into the pr
 - Test method prefix: `test_`
 - Configuration: `.gutconfig` at project root
 
-### Example
+### Example — Red → Green → Refactor cycle
+
+The three phases below show the mandatory TDD workflow. Each phase must leave the project in a compilable, runnable state before you move to the next.
+
+**Red — write the failing test first (no implementation yet)**
 
 ```gdscript
+# tests/unit/test_stamina_component.gd
+# ILLUSTRATION ONLY — do not create StaminaComponent in this project.
+# Run this BEFORE creating StaminaComponent. The test must fail (red) to prove
+# it actually exercises missing behaviour, not a pre-existing accident.
 extends GutTest
 
-var _subject: MyNode
+var _stamina: StaminaComponent
 
 func before_each() -> void:
-    _subject = MyNode.new()
-    add_child(_subject)
+    _stamina = StaminaComponent.new()
+    add_child(_stamina)
 
 func after_each() -> void:
-    _subject.queue_free()
+    _stamina.queue_free()
 
-func test_initial_value_is_zero() -> void:
-    assert_eq(_subject.value, 0)
+func test_stamina_starts_at_max() -> void:
+    # FAILS here — StaminaComponent does not exist yet.
+    assert_eq(_stamina.current, StaminaComponent.MAX_STAMINA)
+
+func test_drain_reduces_current() -> void:
+    _stamina.drain(10)
+    assert_eq(_stamina.current, StaminaComponent.MAX_STAMINA - 10)
 ```
+
+**Green — write the minimal implementation that makes the tests pass**
+
+```gdscript
+# scripts/components/stamina_component.gd
+class_name StaminaComponent
+extends Node
+
+const MAX_STAMINA: int = 100
+
+var current: int = MAX_STAMINA
+
+func drain(amount: int) -> void:
+    current -= amount
+```
+
+Run the suite now — both tests must pass (green) before continuing.
+
+**Refactor — improve the code without breaking tests**
+
+```gdscript
+# scripts/components/stamina_component.gd  (refactored)
+class_name StaminaComponent
+extends Node
+
+const MAX_STAMINA: int = 100
+
+var current: int = MAX_STAMINA
+
+func drain(amount: int) -> void:
+    # Guard added during refactor — tests still pass.
+    current = max(0, current - amount)
+```
+
+Run the suite again after refactoring — still green. Only then commit.
 
 ---
 
