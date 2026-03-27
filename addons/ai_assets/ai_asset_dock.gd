@@ -2,27 +2,31 @@
 extends VBoxContainer
 ## Editor dock for generating game assets via AI APIs and local AI servers.
 ##
-## Cloud API endpoints (keep in sync with tools/generate_asset.sh):
+## Cloud API endpoints (keep in sync with vendor/game-dev-tools/src/generate_asset.sh):
 ##   Sprite : POST https://api.openai.com/v1/images/generations          (OPENAI_API_KEY, tried first)
 ##          : POST https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell  (HUGGING_FACE)
 ##   SFX    : POST https://api.elevenlabs.io/v1/sound-generation
 ##   Music  : POST https://api.replicate.com/v1/predictions
 ##            GET  https://api.replicate.com/v1/predictions/{id}
 ##
-## Local endpoints (keep in sync with tools/generate_asset.sh):
+## Local endpoints (keep in sync with vendor/game-dev-tools/src/generate_asset.sh):
 ##   Sprite : POST http://localhost:7860/sdapi/v1/txt2img  (AUTOMATIC1111)
+##            Server: vendor/game-dev-tools/src/servers/local_sprite_server.py
 ##            Override with LOCAL_SPRITE_URL env var.
 ##            Auto-start with LOCAL_SPRITE_START_CMD env var.
 ##   SFX    : POST http://localhost:8080/generate/sfx  (AudioCraft wrapper)
+##            Server: vendor/game-dev-tools/src/servers/local_audio_server.py
 ##            Override with LOCAL_SFX_URL env var.
 ##            Auto-start with LOCAL_SFX_START_CMD env var.
 ##   Music  : POST http://localhost:8080/generate/music  (MusicGen wrapper)
+##            Server: vendor/game-dev-tools/src/servers/local_audio_server.py
 ##            Override with LOCAL_MUSIC_URL env var.
 ##            Auto-start with LOCAL_MUSIC_START_CMD env var.
 ##
 ## Backend selection is automatic: cloud is tried first. If cloud is
 ## unavailable (missing key or HTTP error), the local server is probed and
 ## started automatically if needed. Set FORCE_LOCAL_AI=1 to skip cloud.
+## For the full fallback chain see docs/asset_generation_architecture.md.
 
 enum AssetType { SPRITE, SFX, MUSIC }
 

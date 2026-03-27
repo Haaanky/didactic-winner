@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# generate_asset.sh — CLI AI asset generator for game and app development
+# generate_asset.sh — CLI batch asset generator for Dudes in Alaska
 #
-# Cloud API endpoints:
+# Cloud API endpoints (keep in sync with addons/ai_assets/ai_asset_dock.gd):
 #   Sprite : POST https://api.openai.com/v1/images/generations           (OPENAI_API_KEY)
 #          : POST https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell  (HUGGING_FACE)
 #   SFX    : POST https://api.elevenlabs.io/v1/sound-generation
 #   Music  : POST https://api.replicate.com/v1/predictions
 #            GET  https://api.replicate.com/v1/predictions/{id}
 #
-# Local endpoints:
+# Local endpoints (keep in sync with addons/ai_assets/ai_asset_dock.gd):
 #   Sprite : POST http://localhost:7860/sdapi/v1/txt2img  (AUTOMATIC1111)
 #            Override with LOCAL_SPRITE_URL env var.
 #            Auto-start with LOCAL_SPRITE_START_CMD env var.
@@ -25,17 +25,17 @@
 #   Set FORCE_LOCAL_AI=1 to skip cloud and always use the local server.
 #
 # Usage:
-#   ./src/generate_asset.sh sprite "a pixel-art campfire"
-#   ./src/generate_asset.sh sfx    "crackling campfire ambience"
-#   ./src/generate_asset.sh music  "peaceful acoustic guitar"
+#   ./tools/generate_asset.sh sprite "a pixel-art campfire in Alaska"
+#   ./tools/generate_asset.sh sfx    "crackling campfire ambience"
+#   ./tools/generate_asset.sh music  "peaceful acoustic guitar, Alaskan wilderness"
 #
 # Usage (JSON spec file):
-#   ./src/generate_asset.sh spec.json
+#   ./tools/generate_asset.sh spec.json
 #
 #   spec.json format:
 #   { "type": "sprite|sfx|music", "prompt": "description text" }
 #
-# Environment variables (or .env file in the directory this script is called from):
+# Environment variables (or .env file in project root):
 #   OPENAI_API_KEY           — cloud sprite generation (DALL-E 3); tried first
 #   HUGGING_FACE             — cloud sprite generation (FLUX.1-schnell); tried if OPENAI fails
 #   ELEVENLABS_API_KEY       — required for cloud SFX generation
@@ -47,12 +47,12 @@
 #   LOCAL_SFX_START_CMD      — command to auto-start the local SFX server
 #   LOCAL_MUSIC_START_CMD    — command to auto-start the local music server
 #   FORCE_LOCAL_AI           — set to any value to skip cloud and use local
-#   ASSET_OUTPUT_DIR         — output directory (default: $PWD/assets/generated)
 
 set -euo pipefail
 
-# Output directory: env var override, else current working directory / assets/generated
-OUTPUT_DIR="${ASSET_OUTPUT_DIR:-$PWD/assets/generated}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+OUTPUT_DIR="$PROJECT_ROOT/assets/generated"
 
 SPRITE_API_URL="https://api.openai.com/v1/images/generations"
 HF_SPRITE_API_URL="https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
@@ -73,11 +73,11 @@ MUSIC_POLL_MAX_ATTEMPTS=20
 SPIN_UP_TIMEOUT=30
 SPIN_UP_POLL=0.5
 
-# Load .env from current working directory if it exists
-if [[ -f "$PWD/.env" ]]; then
+# Load .env if it exists
+if [[ -f "$PROJECT_ROOT/.env" ]]; then
   set -a
   # shellcheck source=/dev/null
-  source "$PWD/.env"
+  source "$PROJECT_ROOT/.env"
   set +a
 fi
 
@@ -101,11 +101,14 @@ die() {
   exit 1
 }
 
+# Returns 0 if a local server is reachable at the given URL, 1 otherwise.
 probe_local() {
   local url="$1"
   curl --connect-timeout 2 -s -o /dev/null "$url" 2>/dev/null
 }
 
+# Starts the local server using the given start command, waits until reachable.
+# Returns 0 on success, 1 if start command is not set or server never starts.
 spin_up_server() {
   local start_cmd_var="$1" probe_url="$2"
   local start_cmd="${!start_cmd_var:-}"
@@ -128,6 +131,8 @@ spin_up_server() {
   return 1
 }
 
+# Ensures a local server is running, starting it if needed.
+# Exits with failure if neither probe nor spin-up succeeds.
 ensure_local_server() {
   local url="$1" start_cmd_var="$2"
   if probe_local "$url"; then
@@ -137,6 +142,15 @@ ensure_local_server() {
 }
 
 mkdir -p "$OUTPUT_DIR"
+
+# Strips the white/near-white background from a generated sprite, converting
+# it to a transparent PNG. Called after every sprite save.
+_strip_sprite_bg() {
+  local file="$1"
+  if ! python3 "$SCRIPT_DIR/remove_bg.py" "$file" 2>/dev/null; then
+    echo "WARNING: background removal failed for $file — leaving as-is" >&2
+  fi
+}
 
 # ---- Sprite ----
 
@@ -197,6 +211,7 @@ _try_generate_sprite_cloud() {
   fi
 
   mv "$tmp_file" "$OUTPUT_DIR/$filename"
+  _strip_sprite_bg "$OUTPUT_DIR/$filename"
   echo "Saved: $OUTPUT_DIR/$filename"
   return 0
 }
@@ -222,8 +237,9 @@ _try_generate_sprite_hf() {
   fi
 
   local filename
-  filename="$(build_filename sprite "$prompt" jpg)"
+  filename="$(build_filename sprite "$prompt" png)"
   mv "$tmp_file" "$OUTPUT_DIR/$filename"
+  _strip_sprite_bg "$OUTPUT_DIR/$filename"
   echo "Saved: $OUTPUT_DIR/$filename"
   return 0
 }
@@ -250,6 +266,7 @@ _generate_sprite_local() {
   local filename
   filename="$(build_filename sprite "$prompt" png)"
   echo "$b64" | base64 -d > "$OUTPUT_DIR/$filename"
+  _strip_sprite_bg "$OUTPUT_DIR/$filename"
   echo "Saved: $OUTPUT_DIR/$filename"
 }
 
@@ -434,6 +451,7 @@ if [[ $# -lt 1 ]]; then
   exit 1
 fi
 
+# JSON spec file mode
 if [[ $# -eq 1 && "$1" == *.json ]]; then
   spec_file="$1"
   [[ ! -f "$spec_file" ]] && die "Spec file not found: $spec_file"
@@ -452,6 +470,7 @@ if [[ $# -eq 1 && "$1" == *.json ]]; then
   exit 0
 fi
 
+# Positional argument mode
 if [[ $# -lt 2 ]]; then
   echo "Usage: $0 <sprite|sfx|music> \"prompt text\""
   echo "       $0 spec.json"

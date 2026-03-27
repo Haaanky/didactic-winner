@@ -17,9 +17,10 @@ embeddings, or any other AI API. The backend selection must be invisible to the 
 
 ## CRITICAL: Never start local model servers from inside Claude's cloud environment
 
-The local servers (`tools/local_sprite_server.py`, `tools/local_audio_server.py`)
-may be started freely on the developer's own machine or any controlled/self-hosted
-environment. They must **not** be started from a Claude Code session running in
+The local servers (`vendor/game-dev-tools/src/servers/local_sprite_server.py`,
+`vendor/game-dev-tools/src/servers/local_audio_server.py`) may be started
+freely on the developer's own machine or any controlled/self-hosted environment.
+They must **not** be started from a Claude Code session running in
 Anthropic's cloud infrastructure.
 
 **Why:** Anthropic's cloud container is shared compute. A 5–20 min CPU-bound
@@ -31,11 +32,13 @@ the hostname is an ephemeral container, or the session was opened via claude.ai 
 the Claude Code web interface without a self-hosted runner.
 
 **Rule for AI assistants when running in Claude's cloud:**
-- Do **not** execute `tools/local_sprite_server.py` or `tools/local_audio_server.py`
+- Do **not** execute any local server script (`vendor/game-dev-tools/src/servers/*.py`)
 - Do **not** run `pip install torch`, `pip install diffusers`, or `pip install audiocraft`
 - Do **not** call `./tools/generate_asset.sh` with `FORCE_LOCAL_AI=1`
-- If cloud generation fails and no API key is available, report the missing key
-  and instruct the user to run `generate_asset.sh` on their own machine
+- If cloud generation fails and no API key is available, use the tier-4 agent
+  built-in skills fallback documented in `docs/asset_generation_architecture.md §4`
+- As a last resort, report the missing key and instruct the user to run
+  `generate_asset.sh` on their own machine
 
 On the developer's local machine or a self-hosted runner the local servers work as
 intended and should be started normally via `LOCAL_*_START_CMD`.
@@ -183,3 +186,18 @@ exercises the error path, consistent with rule 13 in `CLAUDE.md`.
 
 Update `tests/unit/test_ai_asset_dock.gd` (or the relevant test file)
 whenever probe, spin-up, or fallback logic changes.
+
+---
+
+## Full asset generation fallback chain
+
+The complete fallback order for CLI asset generation is documented in
+`docs/asset_generation_architecture.md`. The summary:
+
+1. **`vendor/game-dev-tools/src/generate_asset.sh`** — submodule (primary)
+2. **`tools/_generate_asset_internal.sh`** — project-local copy (secondary)
+3. **Local AI servers** — embedded inside tiers 1 and 2
+4. **Agent built-in skills** — placeholder generation by Claude when all else fails
+
+Always call `./tools/generate_asset.sh` — never call the submodule script directly,
+as the wrapper handles `ASSET_OUTPUT_DIR` and background removal.

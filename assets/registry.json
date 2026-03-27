@@ -1,0 +1,348 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "name": "player_sheet",
+      "type": "sprite",
+      "file_path": "assets/sprites/player_sheet.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "npc",
+      "type": "sprite",
+      "file_path": "assets/sprites/npc.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "deer",
+      "type": "sprite",
+      "file_path": "assets/sprites/deer.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "dog",
+      "type": "sprite",
+      "file_path": "assets/sprites/dog.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "bicycle",
+      "type": "sprite",
+      "file_path": "assets/sprites/bicycle.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "campfire_sheet",
+      "type": "sprite",
+      "file_path": "assets/sprites/campfire_sheet.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "tree",
+      "type": "sprite",
+      "file_path": "assets/sprites/tree.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "stump",
+      "type": "sprite",
+      "file_path": "assets/sprites/stump.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "berry_bush",
+      "type": "sprite",
+      "file_path": "assets/sprites/berry_bush.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "rock_deposit",
+      "type": "sprite",
+      "file_path": "assets/sprites/rock_deposit.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "fishing_spot",
+      "type": "sprite",
+      "file_path": "assets/sprites/fishing_spot.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "tileset_terrain",
+      "type": "sprite",
+      "file_path": "assets/sprites/tileset_terrain.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "ui_icons",
+      "type": "sprite",
+      "file_path": "assets/sprites/ui_icons.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "aurora_strip",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/aurora_strip.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "birch_large",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/birch_large.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "cloud_layer",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/cloud_layer.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "coastal_rocks",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/coastal_rocks.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "fog_wisp",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/fog_wisp.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "forest_far",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/forest_far.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "glacier",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/glacier.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "ice_shore",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/ice_shore.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "mountains_far",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/mountains_far.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "mountains_mid",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/mountains_mid.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "sky_gradient",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/sky_gradient.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "snow_cliff",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/snow_cliff.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "snow_ground",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/snow_ground.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "snowflake",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/snowflake.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "spruce_large",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/spruce_large.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "spruce_medium",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/spruce_medium.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "spruce_small",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/spruce_small.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "water_deep",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/water_deep.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "water_surface",
+      "type": "sprite",
+      "file_path": "assets/sprites/environment/water_surface.png",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "autumn_day",
+      "type": "music",
+      "file_path": "assets/audio/autumn_day.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "spring_day",
+      "type": "music",
+      "file_path": "assets/audio/spring_day.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "summer_day",
+      "type": "music",
+      "file_path": "assets/audio/summer_day.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "winter_outdoor",
+      "type": "music",
+      "file_path": "assets/audio/winter_outdoor.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "cabin_interior",
+      "type": "music",
+      "file_path": "assets/audio/cabin_interior.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "blizzard",
+      "type": "sfx",
+      "file_path": "assets/audio/blizzard.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "menu_click",
+      "type": "sfx",
+      "file_path": "assets/audio/menu_click.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "footstep_snow",
+      "type": "sfx",
+      "file_path": "assets/audio/footstep_snow.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "footstep_grass",
+      "type": "sfx",
+      "file_path": "assets/audio/footstep_grass.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "berry_pick",
+      "type": "sfx",
+      "file_path": "assets/audio/berry_pick.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "campfire_ignite",
+      "type": "sfx",
+      "file_path": "assets/audio/campfire_ignite.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "deer_startle",
+      "type": "sfx",
+      "file_path": "assets/audio/deer_startle.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "dog_bark",
+      "type": "sfx",
+      "file_path": "assets/audio/dog_bark.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "fish_catch",
+      "type": "sfx",
+      "file_path": "assets/audio/fish_catch.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "item_pickup",
+      "type": "sfx",
+      "file_path": "assets/audio/item_pickup.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "rock_mine",
+      "type": "sfx",
+      "file_path": "assets/audio/rock_mine.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    },
+    {
+      "name": "tree_chop",
+      "type": "sfx",
+      "file_path": "assets/audio/tree_chop.wav",
+      "generation_tool": "unknown",
+      "created": "2026-03-24"
+    }
+  ]
+}
