@@ -272,7 +272,7 @@ didactic-winner/
 
 **Always use the latest stable Godot 4.x release.**
 
-- Target the latest stable `4.x` version at all times (e.g. 4.4, not 4.3 or Godot 3.x)
+- Target the latest stable `4.x` version at all times (e.g. 4.6, not 4.5 or Godot 3.x)
 - AI assistants must generate code and APIs compatible with **Godot 4 latest stable** — never Godot 3 syntax
 - When in doubt, cross-reference the [Godot 4 stable docs](https://docs.godotengine.org/en/stable/)
 - Common Godot 3 → 4 traps to avoid:
@@ -473,7 +473,7 @@ godot --headless -s addons/gut/gut_cmdln.gd -gdir=res://tests/unit -ginclude_sub
 
 ```bash
 # Download and install Godot 4 latest stable (Linux, headless)
-GODOT_VERSION="4.4.1"
+GODOT_VERSION="4.6.1"
 wget -q "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -O /tmp/godot.zip
 unzip -q /tmp/godot.zip -d /tmp/godot
 install -m 755 "/tmp/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot

@@ -38,6 +38,15 @@ func _dir_exists(relative: String) -> bool:
 	return DirAccess.dir_exists_absolute(_project_path(relative))
 
 
+# Returns true only if the submodule has been initialised (i.e. its content
+# was checked out by `git submodule update --init`).  An empty placeholder
+# directory is created by git even before init, so _dir_exists alone is not
+# a reliable signal.  The .git file inside the submodule directory is written
+# by git only after a successful init/update.
+func _submodule_initialized() -> bool:
+	return _file_exists(SUBMODULE_DIR + "/.git")
+
+
 # Returns true if a file contains the given substring.
 func _file_contains(relative: String, substring: String) -> bool:
 	var path := _project_path(relative)
@@ -79,7 +88,7 @@ func test_gitmodules_contains_correct_url() -> void:
 # ---------------------------------------------------------------------------
 
 func test_submodule_directory_exists() -> void:
-	if not _dir_exists(SUBMODULE_DIR):
+	if not _submodule_initialized():
 		pending("Submodule not initialised — run: git submodule update --init vendor/game-dev-tools")
 		return
 	assert_true(_dir_exists(SUBMODULE_DIR),
@@ -87,7 +96,7 @@ func test_submodule_directory_exists() -> void:
 
 
 func test_submodule_generate_script_exists() -> void:
-	if not _dir_exists(SUBMODULE_DIR):
+	if not _submodule_initialized():
 		pending("Submodule not initialised — skipping content checks")
 		return
 	assert_true(_file_exists(SUBMODULE_SCRIPT),
@@ -95,7 +104,7 @@ func test_submodule_generate_script_exists() -> void:
 
 
 func test_submodule_sprite_server_exists() -> void:
-	if not _dir_exists(SUBMODULE_DIR):
+	if not _submodule_initialized():
 		pending("Submodule not initialised — skipping content checks")
 		return
 	assert_true(_file_exists(SUBMODULE_SPRITE_SERVER),
@@ -103,7 +112,7 @@ func test_submodule_sprite_server_exists() -> void:
 
 
 func test_submodule_audio_server_exists() -> void:
-	if not _dir_exists(SUBMODULE_DIR):
+	if not _submodule_initialized():
 		pending("Submodule not initialised — skipping content checks")
 		return
 	assert_true(_file_exists(SUBMODULE_AUDIO_SERVER),
@@ -111,7 +120,7 @@ func test_submodule_audio_server_exists() -> void:
 
 
 func test_submodule_readme_exists() -> void:
-	if not _dir_exists(SUBMODULE_DIR):
+	if not _submodule_initialized():
 		pending("Submodule not initialised — skipping content checks")
 		return
 	assert_true(_file_exists("vendor/game-dev-tools/README.md"),
